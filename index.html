@@ -89,6 +89,7 @@
                     <button onclick="switchSection('analytics')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="analytics"><i class="fa-solid fa-chart-line w-5"></i><span>5. Analitika</span></button>
                     <button onclick="switchSection('locations')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="locations"><i class="fa-solid fa-location-dot w-5"></i><span>6. Yetkazib berish nuqtalari</span></button>
                     <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>7. Admin sozlamalari</span></button>
+                    <button onclick="switchSection('spin')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="spin"><i class="fa-solid fa-gift w-5"></i><span>8. Discount spin</span></button>
                 </div>
             </aside>
 
@@ -97,6 +98,18 @@
                 <!-- DASHBOARD -->
                 <section id="sec-dashboard" class="admin-section space-y-6">
                     <h2 class="font-serif font-bold text-2xl">Dashboard Umumiy Ko'rsatkichlar</h2>
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-melissaPeach to-melissaBg border border-melissaPeach/60 p-6 flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-1 relative z-10">
+                            <p id="greet" class="font-serif font-bold text-xl"></p>
+                            <p id="clock" class="text-xs text-gray-600"></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 relative z-10">
+                            <button onclick="switchSection('orders')" class="bg-white/80 text-xs font-semibold px-4 py-2 rounded-xl border border-melissaPeach hover:bg-white transition"><i class="fa-solid fa-bag-shopping mr-1.5"></i>Buyurtmalar</button>
+                            <button onclick="switchSection('products');addProduct()" class="bg-white/80 text-xs font-semibold px-4 py-2 rounded-xl border border-melissaPeach hover:bg-white transition"><i class="fa-solid fa-plus mr-1.5"></i>Yangi mahsulot</button>
+                            <button onclick="switchSection('analytics')" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-black transition"><i class="fa-solid fa-chart-line mr-1.5"></i>Analitika</button>
+                        </div>
+                        <i class="fa-solid fa-feather absolute -right-3 -bottom-7 text-8xl text-white/50 -rotate-12"></i>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
                             <span class="text-xs text-gray-400 font-medium">Umumiy savdo</span>
@@ -117,6 +130,20 @@
                             <span class="text-xs text-gray-400 font-medium">Mijozlar</span>
                             <h3 id="st-cust" class="font-bold text-xl">0 ta</h3>
                             <span class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">Doimiy xaridorlar</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                            <h4 class="font-serif font-bold text-base">Bugun va kecha</h4>
+                            <div id="d-compare" class="space-y-4 text-xs"></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                            <h4 class="font-serif font-bold text-base">Buyurtma holatlari</h4>
+                            <div id="d-status" class="space-y-4"></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                            <h4 class="font-serif font-bold text-base">Eng ko'p sotilgan</h4>
+                            <div id="d-top" class="space-y-3"></div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -151,8 +178,12 @@
                 <section id="sec-products" class="admin-section hidden space-y-6">
                     <div class="flex justify-between items-center">
                         <h2 class="font-serif font-bold text-2xl">Mahsulotlar katalogi</h2>
-                        <button onclick="addProduct()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi mahsulot qo'shish</button>
+                        <div class="flex gap-2">
+                            <button onclick="addCategory()" class="bg-white text-melissaDark border border-melissaDark text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm hover:bg-melissaBg transition">+ Yangi kategoriya</button>
+                            <button onclick="addProduct()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi mahsulot qo'shish</button>
+                        </div>
                     </div>
+                    <div id="cat-chips" class="flex flex-wrap gap-2"></div>
                     <div id="products-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </section>
 
@@ -194,19 +225,24 @@
                     <h2 class="font-serif font-bold text-2xl">Admin Sozlamalari</h2>
                     <div class="bg-white p-6 rounded-2xl border border-melissaPeach/60 space-y-4 max-w-xl shadow-sm">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Admin F.I.O</label>
-                            <input type="text" id="set-name" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Admin ism familiyasi</label>
+                            <input type="text" id="set-name" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Email manzil (login)</label>
-                            <input type="email" id="set-email" disabled class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl text-gray-400">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Login</label>
+                            <input type="text" id="set-login" autocomplete="off" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Yangi parol</label>
-                            <input type="password" id="set-pass" placeholder="********" autocomplete="new-password" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Parol</label>
+                            <input type="password" id="set-pass" placeholder="Yangi parol (o'zgartirmasangiz bo'sh qoldiring)" autocomplete="new-password" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">
                         </div>
-                        <button onclick="saveSettings()" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow">O'zgarishlarni saqlash</button>
+                        <button onclick="saveSettings()" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow hover:bg-black transition">O'zgarishlarni saqlash</button>
                     </div>
+                </section>
+
+                <!-- DISCOUNT SPIN -->
+                <section id="sec-spin" class="admin-section hidden space-y-6">
+                    <h2 class="font-serif font-bold text-2xl">Discount spin</h2>
                 </section>
             </main>
         </div>
@@ -229,7 +265,7 @@
 
     <!-- MODAL -->
     <div id="modal" class="hidden fixed inset-0 z-[60] bg-melissaDark/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <form id="modal-form" class="bg-white w-full max-w-md p-6 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-4">
+        <form id="modal-form" class="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-4">
             <h3 id="modal-title" class="font-serif font-bold text-xl"></h3>
             <div id="modal-fields" class="space-y-3"></div>
             <div class="flex justify-end space-x-2 pt-2">
@@ -251,7 +287,7 @@
             'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700',
             'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600'
         };
-        let user = null, products = [], orders = [], locations = [];
+        let user = null, products = [], orders = [], locations = [], categories = [], catFilter = '', pending = [];
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const money = n => Number(n || 0).toLocaleString('en-US') + " so'm";
@@ -273,7 +309,7 @@
             $('login-screen').classList.add('hidden');
             $('admin-app').classList.remove('hidden');
             $('set-name').value = user.user_metadata?.full_name || '';
-            $('set-email').value = user.email;
+            fillSettings(); tick(); clearInterval(window._t); window._t = setInterval(tick, 30000);
             switchSection('dashboard');
             loadAll();
         }
@@ -297,14 +333,15 @@
 
         // ---------- DATA ----------
         async function loadAll() {
-            const [p, o, l] = await Promise.all([
+            const [p, o, l, c] = await Promise.all([
                 sb.from('products').select('*').order('created_at', { ascending: false }),
                 sb.from('orders').select('*').order('created_at', { ascending: false }),
-                sb.from('locations').select('*').order('created_at', { ascending: true })
+                sb.from('locations').select('*').order('created_at', { ascending: true }),
+                sb.from('categories').select('*').order('name')
             ]);
-            if (fail(p.error) || fail(o.error) || fail(l.error)) return;
-            products = p.data; orders = o.data; locations = l.data;
-            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); loadBots();
+            if (fail(p.error) || fail(o.error) || fail(l.error) || fail(c.error)) return;
+            products = p.data; orders = o.data; locations = l.data; categories = c.data;
+            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); loadBots();
         }
 
         function renderDashboard() {
@@ -335,37 +372,73 @@
         function renderOrders() {
             $('orders-count').textContent = `Jami: ${orders.length} ta buyurtma`;
             $('orders-body').innerHTML = orders.map(o => `
-                <tr>
+                <tr onclick="openOrder(${o.id})" class="cursor-pointer hover:bg-melissaBg/60 transition">
                     <td class="p-4 font-bold">#MEL-${o.id}</td>
                     <td class="p-4">${esc(o.customer)}</td>
                     <td class="p-4">${esc(o.product)}${o.size ? ' (' + esc(o.size) + ')' : ''}</td>
                     <td class="p-4 font-bold">${money(o.amount)}</td>
-                    <td class="p-4"><select onchange="setStatus(${o.id}, this.value)" class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium focus:outline-none cursor-pointer">
+                    <td class="p-4"><select onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)" class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium focus:outline-none cursor-pointer">
                         ${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
                 </tr>`).join('') || '<tr><td colspan="5" class="p-6 text-center text-gray-400">Buyurtmalar yo\'q</td></tr>';
         }
         async function setStatus(id, status) {
             const { error } = await sb.from('orders').update({ status }).eq('id', id);
             if (fail(error)) return;
-            orders.find(o => o.id === id).status = status; renderOrders(); renderDashboard();
+            orders.find(o => o.id === id).status = status; refreshViews();
         }
 
+        const CAT_ACTIVE = 'bg-melissaDark text-white border-melissaDark', CAT_IDLE = 'bg-white text-gray-600 border-melissaPeach';
+        function setCat(i) { catFilter = i < 0 ? '' : categories[i].name; renderProducts(); }
+        function renderChips() {
+            const cnt = n => products.filter(p => p.category === n).length;
+            $('cat-chips').innerHTML = `<button onclick="setCat(-1)" class="px-3 py-1.5 rounded-full border text-xs font-semibold ${!catFilter ? CAT_ACTIVE : CAT_IDLE}">Barchasi <span class="opacity-60">${products.length}</span></button>` +
+                categories.map((c, i) => `<span class="inline-flex items-center rounded-full border text-xs font-semibold ${catFilter === c.name ? CAT_ACTIVE : CAT_IDLE}"><button onclick="setCat(${i})" class="pl-3 pr-2 py-1.5">${esc(c.name)} <span class="opacity-60">${cnt(c.name)}</span></button><button onclick="delCategory(${c.id})" class="pr-3 opacity-50 hover:opacity-100" title="O'chirish"><i class="fa-solid fa-xmark text-[9px]"></i></button></span>`).join('');
+        }
         function renderProducts() {
-            $('products-grid').innerHTML = products.map(p => `
-                <div class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm relative">
-                    <button onclick="delProduct(${p.id})" class="absolute top-6 right-6 w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
-                    <div class="h-32 bg-gray-100 rounded-xl overflow-hidden">
-                        ${p.image_url ? `<img src="${esc(p.image_url)}" class="w-full h-full object-cover" onerror="this.remove()">` : ''}
+            renderChips();
+            const list = catFilter ? products.filter(p => p.category === catFilter) : products;
+            $('products-grid').innerHTML = list.map(p => { const im = p.images || []; return `
+                <div onclick="openProduct(${p.id})" class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm relative cursor-pointer hover:shadow-md transition">
+                    <button onclick="event.stopPropagation();delProduct(${p.id})" class="absolute top-6 right-6 z-10 w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                    <div class="h-32 bg-gray-100 rounded-xl overflow-hidden relative">
+                        ${im[0] ? `<img src="${esc(im[0])}" loading="lazy" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-2xl"></i></div>'}
+                        ${im.length > 1 ? `<span class="absolute bottom-2 left-2 bg-melissaDark/80 text-white text-[10px] px-2 py-0.5 rounded-full"><i class="fa-regular fa-images mr-1"></i>${im.length}</span>` : ''}
                     </div>
                     <h4 class="font-serif font-semibold text-sm">${esc(p.name)}</h4>
                     <p class="text-[10px] text-gray-400">${esc(p.category)}</p>
                     <p class="text-xs font-bold text-melissaDark">${money(p.price)}</p>
-                </div>`).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
+                </div>`; }).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
+        }
+        function openProduct(id) {
+            const p = products.find(x => x.id === id); if (!p) return;
+            const im = p.images || [];
+            $('detail-title').textContent = p.name;
+            $('detail-body').innerHTML = (im.length ? `<div class="grid grid-cols-2 gap-3">${im.map(u => `<img src="${esc(u)}" class="w-full aspect-square object-cover rounded-2xl border border-melissaPeach/60">`).join('')}</div>` : '<p class="text-xs text-gray-400">Rasm yo\'q</p>') +
+                `<div class="grid grid-cols-2 gap-3"><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kategoriya</p><p class="text-sm font-semibold">${esc(p.category)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Narxi</p><p class="text-sm font-semibold">${money(p.price)}</p></div></div>`;
+            $('detail').classList.remove('hidden');
         }
         async function delProduct(id) {
             if (!confirm("Mahsulot o'chirilsinmi?")) return;
+            const p = products.find(x => x.id === id);
             const { error } = await sb.from('products').delete().eq('id', id);
-            if (!fail(error)) { products = products.filter(p => p.id !== id); renderProducts(); renderDashboard(); }
+            if (fail(error)) return;
+            const paths = ((p && p.images) || []).map(u => decodeURIComponent(u.split('/').pop()));
+            if (paths.length) await sb.storage.from('product-images').remove(paths);
+            products = products.filter(x => x.id !== id); renderProducts(); refreshViews();
+        }
+        function addCategory() {
+            openModal('Yangi kategoriya', inp('name', 'Kategoriya nomi', 'text', "Ko'ylak, Kostyum..."), async f => {
+                const { error } = await sb.from('categories').insert({ name: f.name.trim() });
+                if (error && error.code === '23505') return alert('Bunday kategoriya allaqachon bor');
+                if (!fail(error)) { closeModal(); loadAll(); }
+            });
+        }
+        async function delCategory(id) {
+            const c = categories.find(x => x.id === id), n = products.filter(p => p.category === c.name).length;
+            if (n) return alert(`"${c.name}" kategoriyasida ${n} ta mahsulot bor. Avval ularni o'chiring.`);
+            if (!confirm(`"${c.name}" kategoriyasi o'chirilsinmi?`)) return;
+            const { error } = await sb.from('categories').delete().eq('id', id);
+            if (!fail(error)) { if (catFilter === c.name) catFilter = ''; loadAll(); }
         }
 
         function renderLocations() {
@@ -395,12 +468,45 @@
         }
         function closeModal() { $('modal').classList.add('hidden'); }
 
+        async function shrink(file) {
+            const bmp = await createImageBitmap(file), k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+            const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+            c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+            return new Promise(r => c.toBlob(r, 'image/jpeg', .85));
+        }
+        function drawPrev() {
+            $('img-prev').innerHTML = pending.map((it, i) => `<div class="relative aspect-square rounded-xl overflow-hidden border border-melissaPeach"><img src="${it.url}" class="w-full h-full object-cover"><button type="button" onclick="rmImg(${i})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/90 text-red-500 text-[9px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div>`).join('') +
+                (pending.length < 4 ? `<button type="button" onclick="$('img-input').click()" class="aspect-square rounded-xl border-2 border-dashed border-melissaPeach text-gray-400 hover:border-melissaDark hover:text-melissaDark flex flex-col items-center justify-center text-[10px] gap-1"><i class="fa-solid fa-plus"></i>Rasm</button>` : '');
+        }
+        function rmImg(i) { URL.revokeObjectURL(pending[i].url); pending.splice(i, 1); drawPrev(); }
         function addProduct() {
-            openModal('Yangi mahsulot', inp('name', 'Nomi') + inp('category', 'Kategoriya', 'text', 'Ko\'ylak, Kostyum...') + inp('price', "Narxi (so'm)", 'number') + inp('image_url', 'Rasm havolasi (URL)', 'url', 'https://...'),
-                async f => {
-                    const { error } = await sb.from('products').insert({ name: f.name, category: f.category, price: +f.price, image_url: f.image_url || null });
-                    if (!fail(error)) { closeModal(); loadAll(); }
-                });
+            if (!categories.length) { alert("Avval kategoriya qo'shing"); return addCategory(); }
+            pending = [];
+            const sel = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Kategoriya</label><select name="category" required class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${categories.map(c => `<option>${esc(c.name)}</option>`).join('')}</select></div>`;
+            const up = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Rasmlar (4 tagacha)</label><div id="img-prev" class="grid grid-cols-4 gap-2"></div><input id="img-input" type="file" accept="image/*" multiple class="hidden"></div>`;
+            openModal('Yangi mahsulot', inp('name', 'Nomi') + sel + inp('price', "Narxi (so'm)", 'number') + up, async f => {
+                const btn = $('modal-form').querySelector('[type=submit]');
+                btn.disabled = true; btn.textContent = 'Yuklanmoqda...';
+                try {
+                    const urls = [];
+                    for (const it of pending) {
+                        const path = crypto.randomUUID() + '.jpg';
+                        const { error: ue } = await sb.storage.from('product-images').upload(path, it.blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+                        if (ue) throw ue;
+                        urls.push(sb.storage.from('product-images').getPublicUrl(path).data.publicUrl);
+                    }
+                    const { error } = await sb.from('products').insert({ name: f.name.trim(), category: f.category, price: +f.price, images: urls });
+                    if (error) throw error;
+                    closeModal(); loadAll();
+                } catch (err) { alert('Xatolik: ' + err.message); }
+                btn.disabled = false; btn.textContent = 'Saqlash';
+            });
+            $('img-input').onchange = async e => {
+                const files = [...e.target.files].slice(0, 4 - pending.length); e.target.value = '';
+                for (const f of files) { try { const blob = await shrink(f); pending.push({ blob, url: URL.createObjectURL(blob) }); } catch (_) { alert("Rasm o'qilmadi: " + f.name); } }
+                drawPrev();
+            };
+            drawPrev();
         }
         function addLocation() {
             openModal("Yangi filial", inp('name', 'Filial nomi') + inp('address', 'Manzil') + inp('hours', 'Ish vaqti', 'text', '09:00 - 21:00'),
@@ -508,12 +614,55 @@
         }
 
         // ---------- SETTINGS ----------
+        function fillSettings() {
+            $('set-name').value = (user.user_metadata && user.user_metadata.full_name) || '';
+            $('set-login').value = user.email.replace(/@melissa\.uz$/, '');
+            $('set-pass').value = '';
+        }
         async function saveSettings() {
-            const pass = $('set-pass').value, upd = { data: { full_name: $('set-name').value.trim() } };
-            if (pass) { if (pass.length < 6) return alert("Parol kamida 6 ta belgidan iborat bo'lsin"); upd.password = pass; }
-            const { error } = await sb.auth.updateUser(upd);
-            if (fail(error)) return;
-            $('set-pass').value = ''; alert('Sozlamalar saqlandi!');
+            const name = $('set-name').value.trim(), login = $('set-login').value.trim().toLowerCase(), pass = $('set-pass').value;
+            if (!name || !login) return alert("Ism familiya va login bo'sh bo'lmasin");
+            if (!/^[a-z0-9._-]{3,30}$/.test(login)) return alert("Login: 3-30 belgi, faqat lotin harflari, raqam, nuqta va chiziq");
+            if (pass && pass.length < 6) return alert("Parol kamida 6 ta belgidan iborat bo'lsin");
+            const relog = login + '@melissa.uz' !== user.email || !!pass;
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                const r = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ full_name: name, login, password: pass || undefined }) });
+                let j = {}; try { j = await r.json(); } catch (_) {}
+                if (!r.ok) throw new Error(j.error || 'Server xatosi ' + r.status);
+                if (relog) { alert('Saqlandi. Yangi login/parol bilan qayta kiring.'); logout(); }
+                else { user.user_metadata = { ...user.user_metadata, full_name: name }; tick(); alert('Sozlamalar saqlandi!'); }
+            } catch (e) { alert('Xatolik: ' + e.message); }
+        }
+
+        // ---------- DASHBOARD QO'SHIMCHALAR ----------
+        function tick() {
+            const d = new Date(), h = d.getHours(), n = (user && user.user_metadata && user.user_metadata.full_name) || 'Admin';
+            $('greet').textContent = `${h < 5 ? 'Xayrli tun' : h < 12 ? 'Xayrli tong' : h < 18 ? 'Xayrli kun' : 'Xayrli kech'}, ${n}!`;
+            $('clock').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+        const SC = { 'Kutilmoqda': 'bg-amber-400', 'Yetkazilmoqda': 'bg-blue-400', 'Bajarildi': 'bg-green-500', 'Bekor qilindi': 'bg-red-400' };
+        function renderDashExtra() {
+            const L = orders.filter(o => o.status !== 'Bekor qilindi');
+            const day = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toDateString(); };
+            const on = n => L.filter(o => new Date(o.created_at).toDateString() === day(n));
+            const t = on(0), y = on(1);
+            const row = (l, a, b, f) => { const diff = b ? Math.round((a - b) / b * 100) : (a ? 100 : 0), up = diff >= 0; return `<div class="flex items-center justify-between gap-2"><div><p class="text-gray-400">${l}</p><p class="font-bold text-lg">${f(a)}</p><p class="text-[10px] text-gray-400">Kecha: ${f(b)}</p></div><span class="px-2.5 py-1 rounded-full font-semibold ${up ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}"><i class="fa-solid ${up ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'} mr-1"></i>${Math.abs(diff)}%</span></div>`; };
+            $('d-compare').innerHTML = row('Buyurtmalar', t.length, y.length, n => n + ' ta') + row('Savdo', sum(t), sum(y), money);
+            const total = orders.length || 1, cnt = s => orders.filter(o => o.status === s).length;
+            $('d-status').innerHTML = `<div class="flex h-3 rounded-full overflow-hidden bg-melissaBg">${STATUSES.map(s => cnt(s) ? `<div class="${SC[s]}" style="width:${cnt(s) / total * 100}%"></div>` : '').join('')}</div><div class="grid grid-cols-2 gap-2 text-[11px]">${STATUSES.map(s => `<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${SC[s]}"></span>${s} <b>${cnt(s)}</b></div>`).join('')}</div>`;
+            const medals = ['🥇', '🥈', '🥉'], top = rank(group(L, o => o.product), a => a.length).slice(0, 3);
+            $('d-top').innerHTML = top.map((p, i) => `<div class="flex items-center justify-between text-xs"><span class="truncate"><span class="mr-2">${medals[i]}</span>${esc(p.l)}</span><b class="shrink-0 ml-2">${p.v} ta</b></div>`).join('') || '<p class="text-xs text-gray-400">Hozircha ma\'lumot yo\'q</p>';
+        }
+        function refreshViews() { renderDashboard(); renderDashExtra(); renderOrders(); renderAnalytics(); }
+
+        // ---------- BUYURTMA TAFSILOTI ----------
+        function openOrder(id) {
+            const o = orders.find(x => x.id === id); if (!o) return;
+            const f = (l, v) => `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">${l}</p><p class="text-sm font-semibold break-words">${v || '—'}</p></div>`;
+            $('detail-title').textContent = 'Buyurtma #MEL-' + o.id;
+            $('detail-body').innerHTML = `<div class="grid grid-cols-2 gap-3">${f('Mijoz', esc(o.customer))}${f('Telefon', esc(o.phone))}${f('Mahsulot', esc(o.product))}${f("O'lcham", esc(o.size))}${f('Summa', money(o.amount))}${f('Sana', new Date(o.created_at).toLocaleString('en-GB'))}</div>${f('Manzil', esc(o.address))}${f('Izoh', esc(o.note))}<div><p class="text-[10px] text-gray-400 uppercase mb-1">Holatni o'zgartirish</p><select onchange="setStatus(${o.id}, this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
+            $('detail').classList.remove('hidden');
         }
     </script>
 </body>

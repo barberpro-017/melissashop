@@ -7,12 +7,14 @@ Statik sayt (HTML + Tailwind + Supabase) + 2 ta Vercel serverless funksiya (`api
 - `config.js` — Supabase URL va anon key
 - `supabase.sql` — asosiy jadvallar, RLS, namunaviy ma'lumotlar
 - `supabase-bots.sql` — Bot nazorati jadvallari
+- `supabase-update-2.sql` — kategoriyalar, rasm yuklash (Storage), demo ma'lumotlarni tozalash
 - `api/bots.js` — botni mini app qilish / o'chirish (token shu yerda ishlaydi)
+- `api/profile.js` — admin ism/login/parolni o'zgartirish
 - `api/telegram.js` — botning /start javobi (webhook)
 - `vercel.json` — Vercel sozlamalari
 
 ## 1. Supabase
-1. SQL Editor → `supabase.sql` ni Run, keyin `supabase-bots.sql` ni Run.
+1. SQL Editor → `supabase.sql` ni Run, keyin `supabase-bots.sql`, keyin `supabase-update-2.sql` ni Run.
 2. Authentication → Users → Add user: `melissaadmin@melissa.uz` + parol (Auto Confirm User yoqilgan).
 3. Authentication → Sign In / Providers → Email: "Allow new users to sign up" ni o'chiring.
 4. Project Settings → API: Project URL va `anon public` kalitni `config.js` ga yozing.
