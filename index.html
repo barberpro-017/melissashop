@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#FDF6F0">
+    <title>Melissa — Admin Panel</title>
+    <script src="config.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                colors: { melissaBg: '#FDF6F0', melissaPeach: '#F6D8CE', melissaDark: '#2C2C2C', melissaAccent: '#D4A373' },
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+            } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FDF6F0; color: #2C2C2C; }
+        #sidebar { transition: margin .3s ease, opacity .3s ease; }
+        #sidebar.closed { margin-left: -18rem; opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-melissaPeach">
+
+    <!-- 1. LOGIN -->
+    <div id="login-screen" class="fixed inset-0 bg-melissaBg z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-6 relative">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 mx-auto rounded-full border border-melissaDark flex items-center justify-center bg-melissaBg shadow-sm">
+                    <i class="fa-solid fa-feather text-melissaDark"></i>
+                </div>
+                <h1 class="font-serif font-bold text-2xl tracking-wide">Melissa Admin</h1>
+                <p class="text-xs text-gray-400">Boshqaruv paneliga kirish</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Login</label>
+                    <input type="text" id="login-user" required autocomplete="username" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Parol</label>
+                    <input type="password" id="login-pass" required autocomplete="current-password" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark transition">
+                </div>
+                <p id="login-err" class="text-xs text-red-500 text-center hidden"></p>
+                <button id="login-btn" type="submit" class="w-full bg-melissaDark text-white text-sm font-semibold py-3.5 rounded-xl shadow-md hover:bg-black transition">Kirish</button>
+            </form>
+            <div class="text-center pt-2">
+                <span class="text-[11px] text-gray-400 tracking-wider">created by : imradjabov</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ADMIN APP -->
+    <div id="admin-app" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white/80 backdrop-blur-md border-b border-melissaPeach/60 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 rounded-xl bg-melissaBg border border-melissaPeach flex items-center justify-center hover:bg-melissaPeach/40 transition">
+                    <i class="fa-solid fa-bars text-melissaDark"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full border border-melissaDark flex items-center justify-center bg-white">
+                        <i class="fa-solid fa-feather text-xs"></i>
+                    </div>
+                    <span class="font-serif font-bold text-lg tracking-wide">Melissa — Management</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs font-medium text-gray-600">Admin (Superuser)</span>
+                <button onclick="logout()" class="w-9 h-9 rounded-xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-100 transition" title="Chiqish">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 relative">
+            <aside id="sidebar" class="w-72 shrink-0 bg-white border-r border-melissaPeach/60 p-6 space-y-6 z-20">
+                <div class="space-y-1">
+                    <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold px-3 mb-2">Asosiy menyu</p>
+                    <button onclick="switchSection('dashboard')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold bg-melissaDark text-white transition" data-section="dashboard"><i class="fa-solid fa-chart-pie w-5"></i><span>1. Dashboard</span></button>
+                    <button onclick="switchSection('orders')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="orders"><i class="fa-solid fa-bag-shopping w-5"></i><span>2. Buyurtmalar</span></button>
+                    <button onclick="switchSection('products')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="products"><i class="fa-solid fa-shirt w-5"></i><span>3. Mahsulotlar</span></button>
+                    <button onclick="switchSection('locations')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="locations"><i class="fa-solid fa-location-dot w-5"></i><span>4. Yetkazib berish nuqtalari</span></button>
+                    <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>5. Admin sozlamalari</span></button>
+                </div>
+            </aside>
+
+            <main class="flex-1 min-w-0 p-8 max-w-7xl mx-auto space-y-6">
+
+                <!-- DASHBOARD -->
+                <section id="sec-dashboard" class="admin-section space-y-6">
+                    <h2 class="font-serif font-bold text-2xl">Dashboard Umumiy Ko'rsatkichlar</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
+                            <span class="text-xs text-gray-400 font-medium">Umumiy savdo</span>
+                            <h3 id="st-sales" class="font-bold text-xl">0 so'm</h3>
+                            <span id="st-sales-b" class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">Bajarilgan buyurtmalar</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
+                            <span class="text-xs text-gray-400 font-medium">Faol buyurtmalar</span>
+                            <h3 id="st-active" class="font-bold text-xl">0 ta</h3>
+                            <span class="text-[10px] text-melissaAccent font-semibold bg-orange-50 px-2 py-0.5 rounded-full">Kutilmoqda / Yetkazilmoqda</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
+                            <span class="text-xs text-gray-400 font-medium">Mahsulotlar soni</span>
+                            <h3 id="st-prod" class="font-bold text-xl">0 ta</h3>
+                            <span id="st-cat" class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">0 ta kategoriya</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
+                            <span class="text-xs text-gray-400 font-medium">Mijozlar</span>
+                            <h3 id="st-cust" class="font-bold text-xl">0 ta</h3>
+                            <span class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">Doimiy xaridorlar</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                        <div class="lg:col-span-3 bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                            <h4 class="font-serif font-bold text-base">So'nggi 7 kunlik savdo</h4>
+                            <div id="chart" class="flex items-end justify-between gap-2 h-44"></div>
+                        </div>
+                        <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                            <h4 class="font-serif font-bold text-base">So'nggi buyurtmalar</h4>
+                            <div id="recent" class="divide-y divide-gray-100 text-xs"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ORDERS -->
+                <section id="sec-orders" class="admin-section hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-serif font-bold text-2xl">Buyurtmalar ro'yxati</h2>
+                        <span id="orders-count" class="text-xs bg-melissaPeach px-3 py-1 rounded-full font-semibold">Jami: 0 ta buyurtma</span>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-melissaPeach/60 overflow-x-auto shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-melissaBg border-b border-melissaPeach/60 text-gray-500 uppercase">
+                                <tr><th class="p-4">ID</th><th class="p-4">Mijoz</th><th class="p-4">Mahsulot</th><th class="p-4">Summa</th><th class="p-4">Holati</th></tr>
+                            </thead>
+                            <tbody id="orders-body" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PRODUCTS -->
+                <section id="sec-products" class="admin-section hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-serif font-bold text-2xl">Mahsulotlar katalogi</h2>
+                        <button onclick="addProduct()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi mahsulot qo'shish</button>
+                    </div>
+                    <div id="products-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </section>
+
+                <!-- LOCATIONS -->
+                <section id="sec-locations" class="admin-section hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-serif font-bold text-2xl">Yetkazib berish nuqtalari</h2>
+                        <button onclick="addLocation()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow">+ Filial qo'shish</button>
+                    </div>
+                    <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>
+
+                <!-- SETTINGS -->
+                <section id="sec-settings" class="admin-section hidden space-y-6">
+                    <h2 class="font-serif font-bold text-2xl">Admin Sozlamalari</h2>
+                    <div class="bg-white p-6 rounded-2xl border border-melissaPeach/60 space-y-4 max-w-xl shadow-sm">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Admin F.I.O</label>
+                            <input type="text" id="set-name" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Email manzil (login)</label>
+                            <input type="email" id="set-email" disabled class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl text-gray-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Yangi parol</label>
+                            <input type="password" id="set-pass" placeholder="********" autocomplete="new-password" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">
+                        </div>
+                        <button onclick="saveSettings()" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow">O'zgarishlarni saqlash</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer class="bg-white/80 border-t border-melissaPeach/60 py-3 text-center">
+            <span class="text-[11px] text-gray-400">created by : imradjabov</span>
+        </footer>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal" class="hidden fixed inset-0 z-[60] bg-melissaDark/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <form id="modal-form" class="bg-white w-full max-w-md p-6 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-4">
+            <h3 id="modal-title" class="font-serif font-bold text-xl"></h3>
+            <div id="modal-fields" class="space-y-3"></div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModal()" class="text-xs font-semibold px-4 py-2.5 rounded-xl bg-melissaBg border border-melissaPeach">Bekor qilish</button>
+                <button type="submit" class="text-xs font-semibold px-5 py-2.5 rounded-xl bg-melissaDark text-white">Saqlash</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Sozlamalar config.js faylida
+        const { SUPABASE_URL, SUPABASE_KEY } = window.MELISSA_CONFIG || {};
+        const NOT_CONFIGURED = !SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('YOUR-PROJECT');
+        // persistSession:false → sahifa yangilansa yoki qaytib kirilsa, login/parol qayta so'raladi
+        const sb = NOT_CONFIGURED ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+        const STATUSES = ['Kutilmoqda', 'Yetkazilmoqda', 'Bajarildi', 'Bekor qilindi'];
+        const STATUS_CLS = {
+            'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700',
+            'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600'
+        };
+        let user = null, products = [], orders = [], locations = [];
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const money = n => Number(n || 0).toLocaleString('en-US') + " so'm";
+        const fail = (e) => { if (e) { alert('Xatolik: ' + e.message); return true; } return false; };
+
+        // ---------- AUTH ----------
+        async function handleLogin(e) {
+            e.preventDefault();
+            const u = $('login-user').value.trim(), p = $('login-pass').value;
+            const email = u.includes('@') ? u : u + '@melissa.uz';
+            const btn = $('login-btn'), err = $('login-err');
+            if (NOT_CONFIGURED) { err.textContent = "config.js da Supabase URL va KEY kiritilmagan"; err.classList.remove('hidden'); return; }
+            btn.disabled = true; btn.textContent = 'Kutilmoqda...'; err.classList.add('hidden');
+            const { data, error } = await sb.auth.signInWithPassword({ email, password: p });
+            btn.disabled = false; btn.textContent = 'Kirish';
+            if (error) { err.textContent = "Login yoki parol noto'g'ri"; err.classList.remove('hidden'); return; }
+            user = data.user;
+            $('login-pass').value = '';
+            $('login-screen').classList.add('hidden');
+            $('admin-app').classList.remove('hidden');
+            $('set-name').value = user.user_metadata?.full_name || '';
+            $('set-email').value = user.email;
+            switchSection('dashboard');
+            loadAll();
+        }
+        async function logout() {
+            await sb.auth.signOut(); user = null;
+            $('admin-app').classList.add('hidden');
+            $('login-screen').classList.remove('hidden');
+        }
+
+        // ---------- NAV ----------
+        function toggleSidebar() { $('sidebar').classList.toggle('closed'); }
+        function switchSection(secId) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+            $(`sec-${secId}`).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                const on = btn.getAttribute('data-section') === secId;
+                btn.classList.toggle('bg-melissaDark', on); btn.classList.toggle('text-white', on);
+                btn.classList.toggle('text-gray-600', !on); btn.classList.toggle('hover:bg-melissaBg', !on);
+            });
+        }
+
+        // ---------- DATA ----------
+        async function loadAll() {
+            const [p, o, l] = await Promise.all([
+                sb.from('products').select('*').order('created_at', { ascending: false }),
+                sb.from('orders').select('*').order('created_at', { ascending: false }),
+                sb.from('locations').select('*').order('created_at', { ascending: true })
+            ]);
+            if (fail(p.error) || fail(o.error) || fail(l.error)) return;
+            products = p.data; orders = o.data; locations = l.data;
+            renderDashboard(); renderOrders(); renderProducts(); renderLocations();
+        }
+
+        function renderDashboard() {
+            const done = orders.filter(o => o.status === 'Bajarildi');
+            $('st-sales').textContent = money(done.reduce((s, o) => s + Number(o.amount), 0));
+            $('st-active').textContent = orders.filter(o => ['Kutilmoqda', 'Yetkazilmoqda'].includes(o.status)).length + ' ta';
+            $('st-prod').textContent = products.length + ' ta';
+            $('st-cat').textContent = new Set(products.map(p => p.category)).size + ' ta kategoriya';
+            $('st-cust').textContent = new Set(orders.map(o => o.customer.trim().toLowerCase())).size + ' ta';
+
+            const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
+            const key = d => d.toLocaleDateString('en-CA');
+            const sums = days.map(d => done.filter(o => key(new Date(o.created_at)) === key(d)).reduce((s, o) => s + Number(o.amount), 0));
+            const max = Math.max(...sums, 1);
+            $('chart').innerHTML = days.map((d, i) => `
+                <div class="flex-1 flex flex-col items-center justify-end h-full gap-1" title="${money(sums[i])}">
+                    <div class="w-full rounded-t-lg ${sums[i] ? 'bg-melissaAccent' : 'bg-melissaPeach/60'}" style="height:${Math.max(sums[i] / max * 100, 3)}%"></div>
+                    <span class="text-[10px] text-gray-400">${d.getDate()}.${String(d.getMonth() + 1).padStart(2, '0')}</span>
+                </div>`).join('');
+
+            $('recent').innerHTML = orders.slice(0, 5).map(o => `
+                <div class="py-2.5 flex items-center justify-between gap-2">
+                    <div class="min-w-0"><p class="font-bold">#MEL-${o.id}</p><p class="text-gray-500 truncate">${esc(o.customer)}</p></div>
+                    <span class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium whitespace-nowrap">${o.status}</span>
+                </div>`).join('') || '<p class="text-gray-400 py-3">Hozircha buyurtma yo\'q</p>';
+        }
+
+        function renderOrders() {
+            $('orders-count').textContent = `Jami: ${orders.length} ta buyurtma`;
+            $('orders-body').innerHTML = orders.map(o => `
+                <tr>
+                    <td class="p-4 font-bold">#MEL-${o.id}</td>
+                    <td class="p-4">${esc(o.customer)}</td>
+                    <td class="p-4">${esc(o.product)}${o.size ? ' (' + esc(o.size) + ')' : ''}</td>
+                    <td class="p-4 font-bold">${money(o.amount)}</td>
+                    <td class="p-4"><select onchange="setStatus(${o.id}, this.value)" class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium focus:outline-none cursor-pointer">
+                        ${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+                </tr>`).join('') || '<tr><td colspan="5" class="p-6 text-center text-gray-400">Buyurtmalar yo\'q</td></tr>';
+        }
+        async function setStatus(id, status) {
+            const { error } = await sb.from('orders').update({ status }).eq('id', id);
+            if (fail(error)) return;
+            orders.find(o => o.id === id).status = status; renderOrders(); renderDashboard();
+        }
+
+        function renderProducts() {
+            $('products-grid').innerHTML = products.map(p => `
+                <div class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm relative">
+                    <button onclick="delProduct(${p.id})" class="absolute top-6 right-6 w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                    <div class="h-32 bg-gray-100 rounded-xl overflow-hidden">
+                        ${p.image_url ? `<img src="${esc(p.image_url)}" class="w-full h-full object-cover" onerror="this.remove()">` : ''}
+                    </div>
+                    <h4 class="font-serif font-semibold text-sm">${esc(p.name)}</h4>
+                    <p class="text-[10px] text-gray-400">${esc(p.category)}</p>
+                    <p class="text-xs font-bold text-melissaDark">${money(p.price)}</p>
+                </div>`).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
+        }
+        async function delProduct(id) {
+            if (!confirm("Mahsulot o'chirilsinmi?")) return;
+            const { error } = await sb.from('products').delete().eq('id', id);
+            if (!fail(error)) { products = products.filter(p => p.id !== id); renderProducts(); renderDashboard(); }
+        }
+
+        function renderLocations() {
+            $('locations-grid').innerHTML = locations.map(l => `
+                <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm">
+                    <div class="flex justify-between items-start gap-2">
+                        <h4 class="font-serif font-bold text-base">${esc(l.name)}</h4>
+                        <button onclick="delLocation(${l.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                    </div>
+                    <p class="text-xs text-gray-500">${esc(l.address)}</p>
+                    <span class="inline-block bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Ochiq (${esc(l.hours)})</span>
+                </div>`).join('') || '<p class="text-xs text-gray-400">Filiallar yo\'q</p>';
+        }
+        async function delLocation(id) {
+            if (!confirm("Filial o'chirilsinmi?")) return;
+            const { error } = await sb.from('locations').delete().eq('id', id);
+            if (!fail(error)) { locations = locations.filter(l => l.id !== id); renderLocations(); }
+        }
+
+        // ---------- MODAL ----------
+        const inp = (name, label, type = 'text', ph = '') => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${label}</label>
+            <input name="${name}" type="${type}" placeholder="${ph}" ${name === 'image_url' ? '' : 'required'} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`;
+        function openModal(title, fields, onSubmit) {
+            $('modal-title').textContent = title; $('modal-fields').innerHTML = fields;
+            $('modal-form').onsubmit = async e => { e.preventDefault(); await onSubmit(Object.fromEntries(new FormData(e.target))); };
+            $('modal').classList.remove('hidden');
+        }
+        function closeModal() { $('modal').classList.add('hidden'); }
+
+        function addProduct() {
+            openModal('Yangi mahsulot', inp('name', 'Nomi') + inp('category', 'Kategoriya', 'text', 'Ko\'ylak, Kostyum...') + inp('price', "Narxi (so'm)", 'number') + inp('image_url', 'Rasm havolasi (URL)', 'url', 'https://...'),
+                async f => {
+                    const { error } = await sb.from('products').insert({ name: f.name, category: f.category, price: +f.price, image_url: f.image_url || null });
+                    if (!fail(error)) { closeModal(); loadAll(); }
+                });
+        }
+        function addLocation() {
+            openModal("Yangi filial", inp('name', 'Filial nomi') + inp('address', 'Manzil') + inp('hours', 'Ish vaqti', 'text', '09:00 - 21:00'),
+                async f => {
+                    const { error } = await sb.from('locations').insert(f);
+                    if (!fail(error)) { closeModal(); loadAll(); }
+                });
+        }
+
+        // ---------- SETTINGS ----------
+        async function saveSettings() {
+            const pass = $('set-pass').value, upd = { data: { full_name: $('set-name').value.trim() } };
+            if (pass) { if (pass.length < 6) return alert("Parol kamida 6 ta belgidan iborat bo'lsin"); upd.password = pass; }
+            const { error } = await sb.auth.updateUser(upd);
+            if (fail(error)) return;
+            $('set-pass').value = ''; alert('Sozlamalar saqlandi!');
+        }
+    </script>
+</body>
+</html>
