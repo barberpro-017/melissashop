@@ -110,11 +110,16 @@
                         </div>
                         <i class="fa-solid fa-feather absolute -right-3 -bottom-7 text-8xl text-white/50 -rotate-12"></i>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
                             <span class="text-xs text-gray-400 font-medium">Umumiy savdo</span>
                             <h3 id="st-sales" class="font-bold text-xl">0 so'm</h3>
                             <span id="st-sales-b" class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">Bajarilgan buyurtmalar</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
+                            <span class="text-xs text-gray-400 font-medium">Sof foyda</span>
+                            <h3 id="st-profit" class="font-bold text-xl">0 so'm</h3>
+                            <span class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">Savdo − kelish narxi</span>
                         </div>
                         <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
                             <span class="text-xs text-gray-400 font-medium">Faol buyurtmalar</span>
@@ -207,7 +212,7 @@
                         <h2 class="font-serif font-bold text-2xl">Analitika</h2>
                         <span class="text-xs bg-melissaPeach px-3 py-1 rounded-full font-semibold">Batafsil ko'rish uchun kartani bosing</span>
                     </div>
-                    <div id="an-kpis" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                    <div id="an-kpis" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
                     <div id="an-cards" class="grid grid-cols-1 lg:grid-cols-3 gap-4"></div>
                 </section>
 
@@ -287,7 +292,7 @@
             'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700',
             'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600'
         };
-        let user = null, products = [], orders = [], locations = [], categories = [], catFilter = '', pending = [];
+        let user = null, products = [], orders = [], locations = [], categories = [], costs = {}, catFilter = '', pending = [];
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const money = n => Number(n || 0).toLocaleString('en-US') + " so'm";
@@ -333,20 +338,22 @@
 
         // ---------- DATA ----------
         async function loadAll() {
-            const [p, o, l, c] = await Promise.all([
+            const [p, o, l, c, pc] = await Promise.all([
                 sb.from('products').select('*').order('created_at', { ascending: false }),
                 sb.from('orders').select('*').order('created_at', { ascending: false }),
                 sb.from('locations').select('*').order('created_at', { ascending: true }),
-                sb.from('categories').select('*').order('name')
+                sb.from('categories').select('*').order('name'),
+                sb.from('product_costs').select('*')
             ]);
-            if (fail(p.error) || fail(o.error) || fail(l.error) || fail(c.error)) return;
-            products = p.data; orders = o.data; locations = l.data; categories = c.data;
+            if (fail(p.error) || fail(o.error) || fail(l.error) || fail(c.error) || fail(pc.error)) return;
+            products = p.data; orders = o.data; locations = l.data; categories = c.data; costs = Object.fromEntries(pc.data.map(x => [x.product_id, Number(x.cost_price)]));
             renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); loadBots();
         }
 
         function renderDashboard() {
             const done = orders.filter(o => o.status === 'Bajarildi');
             $('st-sales').textContent = money(done.reduce((s, o) => s + Number(o.amount), 0));
+            $('st-profit').textContent = money(profit(done));
             $('st-active').textContent = orders.filter(o => ['Kutilmoqda', 'Yetkazilmoqda'].includes(o.status)).length + ' ta';
             $('st-prod').textContent = products.length + ' ta';
             $('st-cat').textContent = new Set(products.map(p => p.category)).size + ' ta kategoriya';
@@ -406,7 +413,8 @@
                     </div>
                     <h4 class="font-serif font-semibold text-sm">${esc(p.name)}</h4>
                     <p class="text-[10px] text-gray-400">${esc(p.category)}</p>
-                    <p class="text-xs font-bold text-melissaDark">${money(p.price)}</p>
+                    <p class="text-xs font-bold text-melissaDark">Sotuv: ${money(p.price)}</p>
+                    <p class="text-[10px] text-gray-400">Kelish: ${money(costs[p.id] || 0)} · <span class="text-green-600 font-semibold">Foyda: ${money(p.price - (costs[p.id] || 0))}</span></p>
                 </div>`; }).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
         }
         function openProduct(id) {
@@ -414,7 +422,7 @@
             const im = p.images || [];
             $('detail-title').textContent = p.name;
             $('detail-body').innerHTML = (im.length ? `<div class="grid grid-cols-2 gap-3">${im.map(u => `<img src="${esc(u)}" class="w-full aspect-square object-cover rounded-2xl border border-melissaPeach/60">`).join('')}</div>` : '<p class="text-xs text-gray-400">Rasm yo\'q</p>') +
-                `<div class="grid grid-cols-2 gap-3"><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kategoriya</p><p class="text-sm font-semibold">${esc(p.category)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Narxi</p><p class="text-sm font-semibold">${money(p.price)}</p></div></div>`;
+                `<div class="grid grid-cols-2 gap-3"><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kategoriya</p><p class="text-sm font-semibold">${esc(p.category)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Sotuv narxi</p><p class="text-sm font-semibold">${money(p.price)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kelish narxi</p><p class="text-sm font-semibold">${money(costs[p.id] || 0)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Sof foyda (1 dona)</p><p class="text-sm font-semibold text-green-600">${money(p.price - (costs[p.id] || 0))}</p></div></div>${p.description ? `<p class="text-xs text-gray-600 leading-relaxed">${esc(p.description)}</p>` : ''}`;
             $('detail').classList.remove('hidden');
         }
         async function delProduct(id) {
@@ -460,7 +468,7 @@
 
         // ---------- MODAL ----------
         const inp = (name, label, type = 'text', ph = '') => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${label}</label>
-            <input name="${name}" type="${type}" placeholder="${ph}" ${name === 'image_url' ? '' : 'required'} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`;
+            <input name="${name}" type="${type}" placeholder="${ph}" ${['image_url', 'description'].includes(name) ? '' : 'required'} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`;
         function openModal(title, fields, onSubmit) {
             $('modal-title').textContent = title; $('modal-fields').innerHTML = fields;
             $('modal-form').onsubmit = async e => { e.preventDefault(); await onSubmit(Object.fromEntries(new FormData(e.target))); };
@@ -484,7 +492,8 @@
             pending = [];
             const sel = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Kategoriya</label><select name="category" required class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${categories.map(c => `<option>${esc(c.name)}</option>`).join('')}</select></div>`;
             const up = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Rasmlar (4 tagacha)</label><div id="img-prev" class="grid grid-cols-4 gap-2"></div><input id="img-input" type="file" accept="image/*" multiple class="hidden"></div>`;
-            openModal('Yangi mahsulot', inp('name', 'Nomi') + sel + inp('price', "Narxi (so'm)", 'number') + up, async f => {
+            openModal('Yangi mahsulot', inp('name', 'Nomi') + sel + inp('cost_price', "Kelish narxi (so'm)", 'number') + inp('price', "Sotuv narxi (so'm)", 'number') + inp('description', 'Tavsif (ixtiyoriy)') + up, async f => {
+                if (+f.price <= 0 || +f.cost_price < 0) return alert("Narxlarni to'g'ri kiriting");
                 const btn = $('modal-form').querySelector('[type=submit]');
                 btn.disabled = true; btn.textContent = 'Yuklanmoqda...';
                 try {
@@ -495,8 +504,10 @@
                         if (ue) throw ue;
                         urls.push(sb.storage.from('product-images').getPublicUrl(path).data.publicUrl);
                     }
-                    const { error } = await sb.from('products').insert({ name: f.name.trim(), category: f.category, price: +f.price, images: urls });
+                    const { data: np, error } = await sb.from('products').insert({ name: f.name.trim(), category: f.category, price: +f.price, description: (f.description || '').trim() || null, images: urls }).select('id').single();
                     if (error) throw error;
+                    const ce = (await sb.from('product_costs').insert({ product_id: np.id, cost_price: +f.cost_price })).error;
+                    if (ce) throw ce;
                     closeModal(); loadAll();
                 } catch (err) { alert('Xatolik: ' + err.message); }
                 btn.disabled = false; btn.textContent = 'Saqlash';
@@ -566,6 +577,10 @@
         const sum = (a, f = o => Number(o.amount)) => a.reduce((s, o) => s + f(o), 0);
         const group = (arr, fn) => { const m = {}; arr.forEach(o => (m[fn(o)] = m[fn(o)] || []).push(o)); return m; };
         const rank = (m, f) => Object.entries(m).map(([l, a]) => ({ l, v: f(a), n: a.length })).sort((x, y) => y.v - x.v);
+        const profit = a => sum(a, o => Number(o.amount) - Number(o.cost || 0));
+        const lines = list => list.flatMap(o => (o.items && o.items.length)
+            ? o.items.map(i => ({ name: i.name, cat: i.category || 'Boshqa', size: i.size, qty: i.qty, rev: i.price * i.qty, cost: (i.cost || 0) * i.qty }))
+            : [{ name: o.product, cat: catOf(o), size: o.size, qty: 1, rev: Number(o.amount), cost: Number(o.cost || 0) }]);
         const catOf = o => (products.find(p => p.name === o.product) || {}).category || 'Boshqa';
         const NONE = '<p class="text-xs text-gray-400">Ma\'lumot yo\'q</p>';
         const bars = (it, fmt = short) => { const m = Math.max(...it.map(i => i.v), 1); return it.map(i => `<div class="flex items-center gap-2 text-[11px]"><span class="w-20 truncate text-gray-500">${esc(i.l)}</span><div class="flex-1 h-2.5 bg-melissaBg rounded-full overflow-hidden"><div class="h-full rounded-full bg-melissaAccent" style="width:${i.v / m * 100}%"></div></div><span class="w-16 text-right font-semibold">${fmt(i.v)}</span></div>`).join('') || NONE; };
@@ -586,17 +601,21 @@
             const days = [...Array(30)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (29 - i)); return d; });
             const daySum = days.map(d => sum(L.filter(o => key(new Date(o.created_at)) === key(d))));
             const stat = Object.entries(group(orders, o => o.status)).map(([l, a]) => ({ l, v: a.length, a: sum(a) }));
-            const cats = rank(group(L, catOf), sum), prods = rank(group(L, o => o.product), sum), custs = rank(group(L, o => o.customer), sum);
-            const sizes = rank(group(L.filter(o => o.size), o => o.size), a => a.length);
+            const LN = lines(L), cats = rank(group(LN, x => x.cat), a => sum(a, x => x.rev)), prods = rank(group(LN, x => x.name), a => sum(a, x => x.rev)), custs = rank(group(L, o => o.customer), sum);
+            const sizes = rank(group(LN.filter(x => x.size), x => x.size), a => sum(a, x => x.qty));
             const wd = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].map((l, i) => ({ l, v: L.filter(o => (new Date(o.created_at).getDay() + 6) % 7 === i).length }));
             const hrs = [...Array(24)].map((_, h) => L.filter(o => new Date(o.created_at).getHours() === h).length);
             const peak = Math.max(...hrs) ? String(hrs.indexOf(Math.max(...hrs))).padStart(2, '0') + ':00' : '—';
             const rt = (l, c) => l.map((x, i) => [i + 1, esc(x.l), x.n, money(x.v)]);
+            const DN = lines(done), rev = sum(done), cst = sum(done, o => Number(o.cost || 0)), pf = rev - cst, margin = rev ? Math.round(pf / rev * 100) : 0;
+            const pDetail = tbl(["Ko'rsatkich", 'Qiymat'], [['Tushum (chegirma hisobida)', money(rev)], ['Tannarx (kelish narxi)', money(cst)], ['Sof foyda', `<b class="text-green-600">${money(pf)}</b>`], ['Foyda marjasi', margin + '%']]) +
+                tbl(['Mahsulot', 'Sotilgan', 'Tushum', 'Tannarx', 'Foyda'], rank(group(DN, x => x.name), a => sum(a, x => x.rev - x.cost)).map(r => { const a = DN.filter(x => x.name === r.l); return [esc(r.l), sum(a, x => x.qty) + ' ta', money(sum(a, x => x.rev)), money(sum(a, x => x.cost)), money(r.v)]; }));
             const kpis = [
                 { id: 'k1', icon: 'fa-receipt', t: "O'rtacha chek", v: money(L.length ? Math.round(sum(L) / L.length) : 0), d: ord(L) },
                 { id: 'k2', icon: 'fa-circle-check', t: 'Bajarilish darajasi', v: pct(done.length, orders.length) + '%', d: ord(done) },
                 { id: 'k3', icon: 'fa-ban', t: 'Bekor qilish', v: pct(canc.length, orders.length) + '%', d: ord(canc) },
-                { id: 'k4', icon: 'fa-calendar-day', t: 'Bugungi buyurtmalar', v: today.length + ' ta', d: ord(today) }
+                { id: 'k4', icon: 'fa-calendar-day', t: 'Bugungi buyurtmalar', v: today.length + ' ta', d: ord(today) },
+                { id: 'k5', icon: 'fa-coins', t: 'Sof foyda', v: money(pf), d: pDetail }
             ];
             const cards = [
                 { id: 'c1', t: 'Kunlik savdo — 30 kun', w: 'lg:col-span-2', s: line(daySum) + `<p class="text-[11px] text-gray-400">Jami: ${money(sum(L))}</p>`, d: line(daySum, 140) + tbl(['Sana', 'Savdo'], days.map((d, i) => [key(d), money(daySum[i])]).filter((_, i) => daySum[i]).reverse()) },
@@ -606,7 +625,8 @@
                 { id: 'c5', t: 'Top mijozlar', s: bars(custs.slice(0, 5)), d: tbl(['#', 'Mijoz', 'Buyurtma', 'Xarid'], rt(custs)) },
                 { id: 'c6', t: 'Haftaning kunlari', s: heat(wd), d: heat(wd) + tbl(['Kun', 'Buyurtma'], wd.map(x => [x.l, x.v])) },
                 { id: 'c7', t: "O'lchamlar taqsimoti", s: bars(sizes, String), d: bars(sizes, String) + tbl(['O\'lcham', 'Soni'], sizes.map(x => [esc(x.l), x.v])) },
-                { id: 'c8', t: 'Soatlar bo\'yicha faollik', s: line(hrs, 80) + `<p class="text-[11px] text-gray-400">Eng faol soat: ${peak}</p>`, d: line(hrs, 140) + tbl(['Soat', 'Buyurtma'], hrs.map((v, h) => [String(h).padStart(2, '0') + ':00', v]).filter(r => r[1])) }
+                { id: 'c8', t: 'Soatlar bo\'yicha faollik', s: line(hrs, 80) + `<p class="text-[11px] text-gray-400">Eng faol soat: ${peak}</p>`, d: line(hrs, 140) + tbl(['Soat', 'Buyurtma'], hrs.map((v, h) => [String(h).padStart(2, '0') + ':00', v]).filter(r => r[1])) },
+                { id: 'c9', t: 'Foyda tahlili', s: bars([{ l: 'Tushum', v: rev }, { l: 'Tannarx', v: cst }, { l: 'Sof foyda', v: pf }]) + `<p class="text-[11px] text-gray-400">Foyda marjasi: ${margin}%</p>`, d: pDetail }
             ];
             AN = {}; [...kpis, ...cards].forEach(x => AN[x.id] = x);
             $('an-kpis').innerHTML = kpis.map(k => `<button onclick="openDetail('${k.id}')" class="text-left bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2 hover:border-melissaDark hover:shadow-md transition"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-medium">${k.t}</span><i class="fa-solid ${k.icon} text-melissaAccent text-xs"></i></div><h3 class="font-bold text-xl">${k.v}</h3></button>`).join('');
@@ -651,7 +671,7 @@
             $('d-compare').innerHTML = row('Buyurtmalar', t.length, y.length, n => n + ' ta') + row('Savdo', sum(t), sum(y), money);
             const total = orders.length || 1, cnt = s => orders.filter(o => o.status === s).length;
             $('d-status').innerHTML = `<div class="flex h-3 rounded-full overflow-hidden bg-melissaBg">${STATUSES.map(s => cnt(s) ? `<div class="${SC[s]}" style="width:${cnt(s) / total * 100}%"></div>` : '').join('')}</div><div class="grid grid-cols-2 gap-2 text-[11px]">${STATUSES.map(s => `<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${SC[s]}"></span>${s} <b>${cnt(s)}</b></div>`).join('')}</div>`;
-            const medals = ['🥇', '🥈', '🥉'], top = rank(group(L, o => o.product), a => a.length).slice(0, 3);
+            const medals = ['🥇', '🥈', '🥉'], top = rank(group(lines(L), x => x.name), a => sum(a, x => x.qty)).slice(0, 3);
             $('d-top').innerHTML = top.map((p, i) => `<div class="flex items-center justify-between text-xs"><span class="truncate"><span class="mr-2">${medals[i]}</span>${esc(p.l)}</span><b class="shrink-0 ml-2">${p.v} ta</b></div>`).join('') || '<p class="text-xs text-gray-400">Hozircha ma\'lumot yo\'q</p>';
         }
         function refreshViews() { renderDashboard(); renderDashExtra(); renderOrders(); renderAnalytics(); }
@@ -661,7 +681,7 @@
             const o = orders.find(x => x.id === id); if (!o) return;
             const f = (l, v) => `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">${l}</p><p class="text-sm font-semibold break-words">${v || '—'}</p></div>`;
             $('detail-title').textContent = 'Buyurtma #MEL-' + o.id;
-            $('detail-body').innerHTML = `<div class="grid grid-cols-2 gap-3">${f('Mijoz', esc(o.customer))}${f('Telefon', esc(o.phone))}${f('Mahsulot', esc(o.product))}${f("O'lcham", esc(o.size))}${f('Summa', money(o.amount))}${f('Sana', new Date(o.created_at).toLocaleString('en-GB'))}</div>${f('Manzil', esc(o.address))}${f('Izoh', esc(o.note))}<div><p class="text-[10px] text-gray-400 uppercase mb-1">Holatni o'zgartirish</p><select onchange="setStatus(${o.id}, this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
+            $('detail-body').innerHTML = `<div class="grid grid-cols-2 gap-3">${f('Mijoz', esc(o.customer))}${f('Telefon', esc(o.phone))}${f('Mahsulot', esc(o.product))}${f("O'lcham", esc(o.size))}${f('Summa', money(o.amount))}${f('Sana', new Date(o.created_at).toLocaleString('en-GB'))}</div>${(o.items && o.items.length) ? `<div class="bg-melissaBg rounded-xl p-3 space-y-1.5">${o.items.map(i => `<div class="flex justify-between gap-2 text-xs"><span>${esc(i.name)} (${esc(i.size)}) × ${i.qty}</span><b class="shrink-0">${money(i.price * i.qty)}</b></div>`).join('')}</div>` : ''}<div class="grid grid-cols-2 gap-3">${f('Chegirma', money(o.discount))}${f("To'lov", esc(o.payment))}${f('Telegram', o.tg_username ? '@' + esc(o.tg_username) : '')}${f('Sof foyda', money(Number(o.amount) - Number(o.cost || 0)))}</div>${f('Manzil', esc(o.address))}${f('Izoh', esc(o.note))}<div><p class="text-[10px] text-gray-400 uppercase mb-1">Holatni o'zgartirish</p><select onchange="setStatus(${o.id}, this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
             $('detail').classList.remove('hidden');
         }
     </script>

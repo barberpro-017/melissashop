@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#FDF6F0">
+    <title>Melissa — Women's Clothing Shop</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/config.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                colors: { melissaBg: '#FDF6F0', melissaPeach: '#F6D8CE', melissaDark: '#2C2C2C', melissaAccent: '#D4A373', melissaGold: '#C5A059' },
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+            } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FDF6F0; color: #2C2C2C; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .sheet-in { animation: slideUp .3s ease; }
+        .fade-in { animation: fadeIn .25s ease; }
+        input, select { font-size: 16px; } /* iOS zoom'ni oldini oladi */
+    </style>
+</head>
+<body class="bg-melissaBg text-melissaDark antialiased select-none" style="padding-bottom: calc(5rem + env(safe-area-inset-bottom))">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-melissaBg/90 backdrop-blur-md px-4 py-3 border-b border-melissaPeach/60 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <div class="w-9 h-9 rounded-full border border-melissaDark flex items-center justify-center bg-white shadow-sm">
+                <i class="fa-solid fa-feather text-melissaDark text-sm"></i>
+            </div>
+            <div>
+                <h1 class="font-serif font-bold text-lg tracking-wide leading-none">Melissa</h1>
+                <span class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Women's Clothing</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-white shadow-sm border border-melissaPeach flex items-center justify-center hover:bg-melissaPeach/30 transition">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </button>
+            <button onclick="switchTab('profile')" class="w-9 h-9 rounded-full bg-white shadow-sm border border-melissaPeach flex items-center justify-center overflow-hidden">
+                <span id="hdr-avatar" class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Search -->
+    <div id="search-bar" class="hidden max-w-md mx-auto px-4 pt-3 fade-in">
+        <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input id="search-input" type="text" oninput="onSearch(this.value)" placeholder="Kiyim nomini qidiring..." class="w-full bg-white border border-melissaPeach pl-9 pr-9 py-2.5 rounded-xl focus:outline-none select-text">
+            <button onclick="toggleSearch(false)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-solid fa-xmark text-xs"></i></button>
+        </div>
+    </div>
+
+    <main id="app-content" class="max-w-md mx-auto px-4 pt-4">
+
+        <!-- HOME -->
+        <section id="tab-home" class="space-y-6">
+            <div class="relative rounded-2xl overflow-hidden bg-[#2C2C2C] text-white p-6 shadow-lg">
+                <div class="relative z-10 max-w-[200px]">
+                    <span class="bg-melissaAccent text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Yangi Kolleksiya</span>
+                    <h2 class="font-serif text-2xl font-bold mt-2 leading-tight">Bahoriy Nafislik</h2>
+                    <p class="text-xs text-gray-300 mt-1">Savatda MELISSA10 promo-kodi bilan 10% chegirma.</p>
+                    <button onclick="setCat(-1);document.getElementById('product-section-title').scrollIntoView({behavior:'smooth'})" class="mt-4 bg-white text-melissaDark text-xs font-semibold px-4 py-2 rounded-full shadow hover:bg-melissaPeach transition">Xarid qilish</button>
+                </div>
+                <div id="banner-img" class="absolute right-0 bottom-0 top-0 w-1/2 opacity-70 bg-cover bg-center flex items-center justify-center"><i class="fa-solid fa-feather text-7xl text-white/20 -rotate-12"></i></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3"><h3 class="font-serif font-bold text-base">Kategoriyalar</h3></div>
+                <div id="cat-list" class="flex space-x-3 overflow-x-auto hide-scrollbar pb-1"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-serif font-bold text-base" id="product-section-title">Ommabop liboslar</h3>
+                    <span class="text-xs text-gray-500" id="product-count"></span>
+                </div>
+                <div id="products-grid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- WISHLIST -->
+        <section id="tab-wishlist" class="hidden space-y-4">
+            <h2 class="font-serif font-bold text-xl pt-2">Sevimlilar</h2>
+            <div id="wishlist-grid" class="grid grid-cols-2 gap-3"></div>
+            <div id="empty-wishlist" class="hidden text-center py-16 text-gray-400">
+                <i class="fa-regular fa-heart text-4xl mb-2 text-melissaAccent"></i>
+                <p class="text-sm">Sevimlilar ro'yxati bo'sh</p>
+            </div>
+        </section>
+
+        <!-- CART -->
+        <section id="tab-cart" class="hidden space-y-4">
+            <h2 class="font-serif font-bold text-xl pt-2">Savat</h2>
+            <div id="cart-items" class="space-y-3"></div>
+            <div id="empty-cart" class="hidden text-center py-16 text-gray-400">
+                <i class="fa-solid fa-bag-shopping text-4xl mb-2 text-melissaAccent"></i>
+                <p class="text-sm">Savatingiz hozircha bo'sh</p>
+                <button onclick="switchTab('home')" class="mt-3 bg-melissaDark text-white text-xs px-4 py-2 rounded-full">Xaridni boshlash</button>
+            </div>
+            <div id="cart-summary" class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-3 shadow-sm">
+                <div class="flex justify-between text-xs text-gray-600"><span>Mahsulotlar narxi:</span><span id="subtotal-price">0 so'm</span></div>
+                <div class="flex justify-between text-xs text-gray-600"><span>Chegirma (Promo):</span><span id="discount-price" class="text-green-600">0 so'm</span></div>
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="text" id="promo-input" placeholder="Promo-kod (masalan: MELISSA10)" class="flex-1 min-w-0 bg-melissaBg border border-melissaPeach text-xs px-3 py-2 rounded-xl focus:outline-none select-text">
+                    <button onclick="applyPromo()" class="bg-melissaAccent text-white text-xs px-4 py-2 rounded-xl font-medium">Qo'shish</button>
+                </div>
+                <hr class="border-dashed border-gray-200">
+                <div class="flex justify-between text-sm font-bold"><span>Jami to'lov:</span><span id="total-price">0 so'm</span></div>
+                <button onclick="openCheckout()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3 rounded-xl shadow-md hover:bg-black transition">Buyurtmani rasmiylashtirish</button>
+            </div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="tab-profile" class="hidden space-y-4">
+            <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 text-center space-y-3 shadow-sm">
+                <div id="prof-avatar" class="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-melissaAccent flex items-center justify-center bg-melissaBg"><i class="fa-solid fa-feather text-2xl"></i></div>
+                <div>
+                    <h3 id="user-name" class="font-serif font-bold text-lg">Mehmon</h3>
+                    <p id="user-id" class="text-xs text-gray-500"></p>
+                </div>
+                <div class="flex justify-around pt-2 border-t border-gray-100 text-xs">
+                    <div><span id="stat-orders" class="block font-bold text-sm">—</span><span class="text-gray-500">Buyurtmalar</span></div>
+                    <div class="border-r border-gray-200"></div>
+                    <div><span id="stat-sum" class="block font-bold text-sm">—</span><span class="text-gray-500">Xaridlar</span></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-melissaPeach/60 overflow-hidden divide-y divide-gray-100 shadow-sm">
+                <div onclick="openOrders()" class="p-4 flex items-center justify-between text-xs font-medium hover:bg-melissaBg cursor-pointer">
+                    <span class="flex items-center space-x-3"><i class="fa-solid fa-box-archive text-melissaAccent w-4"></i><span>Mening buyurtmalarim</span></span>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                </div>
+                <div onclick="openAddress()" class="p-4 flex items-center justify-between text-xs font-medium hover:bg-melissaBg cursor-pointer">
+                    <span class="flex items-center space-x-3"><i class="fa-solid fa-location-dot text-melissaAccent w-4"></i><span>Yetkazib berish manzili</span></span>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                </div>
+                <div onclick="toast('Melissa Club tez orada ochiladi')" class="p-4 flex items-center justify-between text-xs font-medium hover:bg-melissaBg cursor-pointer">
+                    <span class="flex items-center space-x-3"><i class="fa-solid fa-gift text-melissaAccent w-4"></i><span>Melissa Club Karta</span></span>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-melissaPeach/60 px-6 pt-3 flex justify-between items-center z-40" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))">
+        <button onclick="switchTab('home')" class="nav-item flex flex-col items-center text-melissaAccent" data-tab="home"><i class="fa-solid fa-house text-lg"></i><span class="text-[10px] mt-1 font-medium">Asosiy</span></button>
+        <button onclick="switchTab('wishlist')" class="nav-item flex flex-col items-center text-gray-400 relative" data-tab="wishlist"><i class="fa-solid fa-heart text-lg"></i><span class="text-[10px] mt-1 font-medium">Sevimlilar</span>
+            <span id="wishlist-badge" class="absolute -top-1 -right-2 bg-melissaAccent text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span></button>
+        <button onclick="switchTab('cart')" class="nav-item flex flex-col items-center text-gray-400 relative" data-tab="cart"><i class="fa-solid fa-bag-shopping text-lg"></i><span class="text-[10px] mt-1 font-medium">Savat</span>
+            <span id="cart-badge" class="absolute -top-1 -right-2 bg-melissaDark text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span></button>
+        <button onclick="switchTab('profile')" class="nav-item flex flex-col items-center text-gray-400" data-tab="profile"><i class="fa-solid fa-user text-lg"></i><span class="text-[10px] mt-1 font-medium">Profil</span></button>
+    </nav>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center hidden fade-in" onclick="if(event.target===this)closeModal()">
+        <div class="bg-melissaBg w-full max-w-md rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4 sheet-in" style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom))">
+            <div class="flex justify-between items-center">
+                <h3 class="font-serif font-bold text-lg" id="modal-title"></h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0 ml-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="relative">
+                <div id="modal-gallery" onscroll="onGallery(this)" class="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar rounded-2xl h-64 bg-white"></div>
+                <div id="modal-dots" class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <span id="modal-price" class="font-bold text-lg text-melissaDark"></span>
+                <span id="modal-category" class="text-xs bg-melissaPeach px-2.5 py-1 rounded-full font-medium"></span>
+            </div>
+            <p id="modal-desc" class="text-xs text-gray-600 leading-relaxed"></p>
+            <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2">O'lchamni tanlang:</label>
+                <div class="flex space-x-2" id="modal-sizes"></div>
+            </div>
+            <button onclick="addToCartFromModal()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl shadow-md hover:bg-black transition">Savatga qo'shish</button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/50 z-50 flex items-end justify-center hidden fade-in" onclick="if(event.target===this)closeCheckout()">
+        <div class="bg-melissaBg w-full max-w-md rounded-t-3xl p-5 max-h-[90vh] overflow-y-auto space-y-4 sheet-in" style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom))">
+            <div class="flex justify-between items-center">
+                <h3 class="font-serif font-bold text-lg">Buyurtmani rasmiylashtirish</h3>
+                <button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div><label class="font-semibold text-gray-700 block mb-1">Ism va familiya</label>
+                    <input type="text" id="checkout-name" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none select-text"></div>
+                <div><label class="font-semibold text-gray-700 block mb-1">Telefon raqam</label>
+                    <input type="tel" id="checkout-phone" inputmode="numeric" oninput="maskPhone(this)" onfocus="if(!this.value)maskPhone(this)" placeholder="+998 __ ___ __ __" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none select-text"></div>
+                <div><label class="font-semibold text-gray-700 block mb-1">Yetkazib berish manzili</label>
+                    <input type="text" id="checkout-address" placeholder="Toshkent shahri, Amir Temur ko'chasi" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none select-text"></div>
+                <div><label class="font-semibold text-gray-700 block mb-1">To'lov turi</label>
+                    <select id="checkout-pay" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none">
+                        <option>Payme / Click (Online)</option><option>Kuryerga naqd pul orqali</option><option>Terminal orqali</option>
+                    </select></div>
+            </div>
+            <div class="flex justify-between text-sm font-bold pt-1"><span>Jami:</span><span id="checkout-total"></span></div>
+            <button id="order-btn" onclick="completeOrder()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl shadow-md">Buyurtmani tasdiqlash</button>
+        </div>
+    </div>
+
+    <!-- Generic Sheet (buyurtmalar tarixi, manzil, muvaffaqiyat) -->
+    <div id="sheet" class="fixed inset-0 bg-black/50 z-[55] flex items-end justify-center hidden fade-in" onclick="if(event.target===this)closeSheet()">
+        <div class="bg-melissaBg w-full max-w-md rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4 sheet-in" style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom))">
+            <div class="flex justify-between items-center">
+                <h3 id="sheet-title" class="font-serif font-bold text-lg"></h3>
+                <button onclick="closeSheet()" class="w-8 h-8 rounded-full bg-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="sheet-body"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed left-1/2 -translate-x-1/2 z-[60] bg-melissaDark text-white text-xs px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 max-w-[90%] text-center" style="bottom: calc(5.5rem + env(safe-area-inset-bottom))"></div>
+
+    <script>
+        // ---------- Telegram ----------
+        const tg = window.Telegram && window.Telegram.WebApp;
+        if (tg) {
+            tg.ready(); tg.expand();
+            try { tg.setHeaderColor('#FDF6F0'); tg.setBackgroundColor('#FDF6F0'); if (tg.setBottomBarColor) tg.setBottomBarColor('#FFFFFF'); } catch (_) {}
+        }
+        const TU = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+
+        // ---------- Yordamchilar ----------
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmt = n => Number(n || 0).toLocaleString('en-US') + " so'm";
+        const ls = { get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} } };
+        const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+        const STATUS_CLS = { 'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700', 'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600' };
+        const NOIMG = '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-3xl"></i></div>';
+
+        let products = [], categories = [], cat = 'Barchasi', query = '', tab = 'home';
+        let cart = ls.get('mel_cart', []), wish = ls.get('mel_wish', []);
+        let promo = 0, promoCode = '', cur = null, curSize = 'S', myOrders = null;
+
+        let toastT;
+        function toast(msg) {
+            const t = $('toast'); t.textContent = msg; t.style.opacity = 1;
+            clearTimeout(toastT); toastT = setTimeout(() => t.style.opacity = 0, 2200);
+        }
+        const open = id => !$(id).classList.contains('hidden');
+
+        // ---------- Ma'lumot ----------
+        const CFG = window.MELISSA_CONFIG || {};
+        const q = path => fetch(`${CFG.SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY } })
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+
+        async function load() {
+            $('products-grid').innerHTML = [1, 2, 3, 4].map(() => '<div class="bg-white rounded-2xl h-64 border border-melissaPeach/60 animate-pulse"></div>').join('');
+            try {
+                const [p, c] = await Promise.all([
+                    q('products?select=id,name,category,price,images,description&order=created_at.desc'),
+                    q('categories?select=name&order=name')
+                ]);
+                products = p.map(x => ({ ...x, price: Number(x.price), images: x.images || [] }));
+                categories = c.map(x => x.name);
+                // Savat va sevimlilarni mavjud mahsulotlarga moslash
+                cart = cart.filter(i => products.some(p => p.id === i.id)); ls.set('mel_cart', cart);
+                wish = wish.filter(id => products.some(p => p.id === id)); ls.set('mel_wish', wish);
+                const first = products.find(p => p.images[0]);
+                if (first) $('banner-img').style.backgroundImage = `url('${first.images[0].replace(/'/g, '%27')}')`;
+                renderCats(); renderHome(); updateBadges();
+            } catch (_) {
+                $('products-grid').innerHTML = '<div class="col-span-2 text-center py-12 text-gray-400 space-y-3"><i class="fa-solid fa-wifi text-3xl text-melissaAccent"></i><p class="text-sm">Ma\'lumotlarni yuklab bo\'lmadi</p><button onclick="load()" class="bg-melissaDark text-white text-xs px-4 py-2 rounded-full">Qayta urinish</button></div>';
+            }
+        }
+
+        // ---------- Bosh sahifa ----------
+        function card(p) {
+            const w = wish.includes(p.id), im = p.images[0];
+            return `
+            <div class="bg-white rounded-2xl p-3 border border-melissaPeach/60 shadow-sm flex flex-col justify-between relative group">
+                <button onclick="toggleWish(${p.id}, event)" class="absolute top-5 right-5 w-7 h-7 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-xs shadow-sm z-10">
+                    <i class="fa-${w ? 'solid text-melissaAccent' : 'regular text-gray-400'} fa-heart"></i></button>
+                <div onclick="openProduct(${p.id})" class="cursor-pointer">
+                    <div class="rounded-xl overflow-hidden h-44 bg-gray-100 mb-2">${im ? `<img src="${esc(im)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">` : NOIMG}</div>
+                    <h4 class="font-serif font-semibold text-xs truncate">${esc(p.name)}</h4>
+                    <span class="text-[10px] text-gray-400">${esc(p.category)}</span>
+                </div>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                    <span class="font-bold text-xs text-melissaDark">${fmt(p.price)}</span>
+                    <button onclick="quickAdd(${p.id})" class="w-7 h-7 bg-melissaDark text-white rounded-full flex items-center justify-center text-xs shadow hover:bg-melissaAccent transition"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                </div>
+            </div>`;
+        }
+        const CHIP_ON = 'bg-melissaDark text-white', CHIP_OFF = 'bg-white border border-melissaPeach text-melissaDark';
+        function renderCats() {
+            const chip = (label, i, on) => `<button onclick="setCat(${i})" class="px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap shadow-sm transition ${on ? CHIP_ON : CHIP_OFF}">${esc(label)}</button>`;
+            $('cat-list').innerHTML = chip('Barchasi', -1, cat === 'Barchasi') + categories.map((c, i) => chip(c, i, cat === c)).join('');
+        }
+        function setCat(i) { cat = i < 0 ? 'Barchasi' : categories[i]; renderCats(); renderHome(); }
+        function renderHome() {
+            const s = query.trim().toLowerCase();
+            const list = products.filter(p => (cat === 'Barchasi' || p.category === cat) && (!s || p.name.toLowerCase().includes(s)));
+            $('product-section-title').textContent = s ? 'Qidiruv natijalari' : cat === 'Barchasi' ? 'Ommabop liboslar' : cat;
+            $('product-count').textContent = `${list.length} ta mahsulot`;
+            $('products-grid').innerHTML = list.map(card).join('') ||
+                `<div class="col-span-2 text-center py-12 text-gray-400"><i class="fa-solid fa-shirt text-3xl mb-2 text-melissaAccent"></i><p class="text-sm">${products.length ? 'Hech narsa topilmadi' : 'Mahsulotlar tez orada qo\'shiladi'}</p></div>`;
+        }
+        function toggleSearch(force) {
+            const show = force === undefined ? !open('search-bar') : force;
+            $('search-bar').classList.toggle('hidden', !show);
+            if (show) { switchTab('home'); $('search-input').focus(); }
+            else { $('search-input').value = ''; query = ''; renderHome(); }
+            syncBack();
+        }
+        function onSearch(v) { query = v; renderHome(); }
+
+        // ---------- Tablar ----------
+        function switchTab(t) {
+            tab = t;
+            ['home', 'wishlist', 'cart', 'profile'].forEach(x => $(`tab-${x}`).classList.toggle('hidden', x !== t));
+            document.querySelectorAll('.nav-item').forEach(i => {
+                const on = i.dataset.tab === t;
+                i.classList.toggle('text-melissaAccent', on); i.classList.toggle('text-gray-400', !on);
+            });
+            if (t !== 'home' && open('search-bar')) toggleSearch(false);
+            if (t === 'cart') renderCart();
+            if (t === 'wishlist') renderWishlist();
+            if (t === 'profile') renderProfile();
+            window.scrollTo({ top: 0 }); syncBack();
+        }
+
+        // ---------- Mahsulot oynasi ----------
+        function sizeBtns() {
+            $('modal-sizes').innerHTML = SIZES.map(s => `<button onclick="selectSize('${s}')" class="px-3 py-1.5 rounded-xl border text-xs font-medium ${s === curSize ? 'border-melissaDark bg-melissaDark text-white' : 'border-melissaPeach bg-white'}">${s}</button>`).join('');
+        }
+        function selectSize(s) { curSize = s; sizeBtns(); }
+        function openProduct(id) {
+            cur = products.find(p => p.id === id); if (!cur) return;
+            curSize = 'S';
+            $('modal-title').textContent = cur.name;
+            $('modal-gallery').innerHTML = cur.images.length
+                ? cur.images.map(u => `<img src="${esc(u)}" class="w-full h-full object-cover shrink-0 snap-center">`).join('')
+                : `<div class="w-full h-full shrink-0">${NOIMG}</div>`;
+            $('modal-gallery').scrollLeft = 0;
+            $('modal-dots').innerHTML = cur.images.length > 1 ? cur.images.map((_, i) => `<span class="dot w-1.5 h-1.5 rounded-full ${i ? 'bg-white/60' : 'bg-white'} shadow"></span>`).join('') : '';
+            $('modal-price').textContent = fmt(cur.price);
+            $('modal-category').textContent = cur.category;
+            $('modal-desc').textContent = cur.description || '';
+            $('modal-desc').classList.toggle('hidden', !cur.description);
+            sizeBtns();
+            $('product-modal').classList.remove('hidden'); syncBack();
+        }
+        function onGallery(g) {
+            const i = Math.round(g.scrollLeft / g.clientWidth);
+            document.querySelectorAll('#modal-dots .dot').forEach((d, k) => { d.classList.toggle('bg-white', k === i); d.classList.toggle('bg-white/60', k !== i); });
+        }
+        function closeModal() { $('product-modal').classList.add('hidden'); syncBack(); }
+        function addToCartFromModal() { if (cur) { addToCart(cur.id, curSize); closeModal(); } }
+
+        // ---------- Savat ----------
+        function quickAdd(id) { addToCart(id, 'S'); }
+        function addToCart(id, size) {
+            const e = cart.find(i => i.id === id && i.size === size);
+            if (e) e.qty = Math.min(20, e.qty + 1); else cart.push({ id, size, qty: 1 });
+            ls.set('mel_cart', cart); updateBadges();
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            toast("Mahsulot savatga qo'shildi!");
+        }
+        function updateBadges() {
+            const n = cart.reduce((s, i) => s + i.qty, 0);
+            $('cart-badge').textContent = n; $('cart-badge').classList.toggle('hidden', !n);
+            $('wishlist-badge').textContent = wish.length; $('wishlist-badge').classList.toggle('hidden', !wish.length);
+        }
+        const rows = () => cart.map((c, i) => ({ c, i, p: products.find(x => x.id === c.id) })).filter(r => r.p);
+        function totals() {
+            const sub = rows().reduce((s, r) => s + r.p.price * r.c.qty, 0), disc = Math.round(sub * promo / 100);
+            return { sub, disc, total: sub - disc };
+        }
+        function renderCart() {
+            const rs = rows();
+            $('empty-cart').classList.toggle('hidden', rs.length > 0);
+            $('cart-summary').classList.toggle('hidden', !rs.length);
+            $('cart-items').innerHTML = rs.map(({ c, i, p }) => `
+                <div class="bg-white p-3 rounded-2xl border border-melissaPeach/60 flex items-center space-x-3 shadow-sm">
+                    <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">${p.images[0] ? `<img src="${esc(p.images[0])}" class="w-full h-full object-cover">` : NOIMG}</div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-serif font-semibold text-xs truncate">${esc(p.name)}</h4>
+                        <p class="text-[10px] text-gray-400">O'lcham: ${c.size}</p>
+                        <span class="font-bold text-xs text-melissaDark mt-1 block">${fmt(p.price)}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-melissaBg px-2 py-1 rounded-xl">
+                        <button onclick="changeQty(${i}, -1)" class="text-xs px-1.5 py-0.5">-</button>
+                        <span class="text-xs font-semibold">${c.qty}</span>
+                        <button onclick="changeQty(${i}, 1)" class="text-xs px-1.5 py-0.5">+</button>
+                    </div>
+                </div>`).join('');
+            const t = totals();
+            $('subtotal-price').textContent = fmt(t.sub); $('discount-price').textContent = fmt(t.disc); $('total-price').textContent = fmt(t.total);
+        }
+        function changeQty(i, d) {
+            cart[i].qty = Math.min(20, cart[i].qty + d);
+            if (cart[i].qty <= 0) cart.splice(i, 1);
+            ls.set('mel_cart', cart); renderCart(); updateBadges();
+        }
+        function applyPromo() {
+            const code = $('promo-input').value.trim().toUpperCase();
+            if (code === 'MELISSA10') { promo = 10; promoCode = code; toast("Tabriklaymiz! 10% chegirma qo'shildi."); renderCart(); }
+            else toast('Promo-kod yaroqsiz!');
+        }
+
+        // ---------- Sevimlilar ----------
+        function toggleWish(id, e) {
+            e.stopPropagation();
+            const i = wish.indexOf(id); i > -1 ? wish.splice(i, 1) : wish.push(id);
+            ls.set('mel_wish', wish); updateBadges(); renderHome();
+            if (tab === 'wishlist') renderWishlist();
+        }
+        function renderWishlist() {
+            const list = products.filter(p => wish.includes(p.id));
+            $('empty-wishlist').classList.toggle('hidden', list.length > 0);
+            $('wishlist-grid').innerHTML = list.map(card).join('');
+        }
+
+        // ---------- Buyurtma ----------
+        function maskPhone(el) {
+            let d = el.value.replace(/\D/g, '');
+            if ('998'.startsWith(d)) d = '998';          // prefiksni o'chirib bo'lmaydi
+            else if (!d.startsWith('998')) d = '998' + d; // 90 123 45 67 ko'rinishida kiritilsa
+            d = d.slice(0, 12);
+            el.value = '+' + [d.slice(0, 3), d.slice(3, 5), d.slice(5, 8), d.slice(8, 10), d.slice(10, 12)].filter(Boolean).join(' ');
+        }
+        function openCheckout() {
+            if (!rows().length) return toast("Savatingiz bo'sh");
+            if (!$('checkout-name').value) $('checkout-name').value = TU ? [TU.first_name, TU.last_name].filter(Boolean).join(' ') : '';
+            if (!$('checkout-address').value) $('checkout-address').value = ls.get('mel_addr', '');
+            $('checkout-total').textContent = fmt(totals().total);
+            $('checkout-modal').classList.remove('hidden'); syncBack();
+        }
+        function closeCheckout() { $('checkout-modal').classList.add('hidden'); syncBack(); }
+        async function completeOrder() {
+            const rs = rows(); if (!rs.length) return;
+            const name = $('checkout-name').value.trim(), phone = $('checkout-phone').value, address = $('checkout-address').value.trim();
+            if (!name || phone.replace(/\D/g, '').length < 12 || address.length < 5) return toast("Ism, telefon va manzilni to'liq kiriting");
+            if (!tg || !tg.initData) return toast('Buyurtma berish uchun ilovani Telegram orqali oching');
+            const btn = $('order-btn'); btn.disabled = true; btn.textContent = 'Yuborilmoqda...';
+            try {
+                const r = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                    initData: tg.initData, name, phone, address, payment: $('checkout-pay').value, promo: promoCode,
+                    items: rs.map(x => ({ id: x.c.id, size: x.c.size, qty: x.c.qty })) }) });
+                const j = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(j.error || 'Server xatosi');
+                ls.set('mel_addr', address);
+                cart = []; ls.set('mel_cart', cart); promo = 0; promoCode = ''; $('promo-input').value = ''; myOrders = null;
+                updateBadges(); closeCheckout(); renderCart();
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                openSheet('Buyurtma qabul qilindi', `<div class="text-center space-y-3 py-4">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-green-50 text-green-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-check"></i></div>
+                    <p class="font-serif font-bold text-lg">#MEL-${j.id}</p>
+                    <p class="text-xs text-gray-600">Jami: <b>${fmt(j.amount)}</b><br>Operatorimiz tez orada siz bilan bog'lanadi. Tasdiq xabari bot orqali ham yuborildi.</p>
+                    <button onclick="closeSheet();switchTab('home')" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl">Asosiy sahifaga qaytish</button></div>`);
+            } catch (e) { toast(e.message); }
+            btn.disabled = false; btn.textContent = 'Buyurtmani tasdiqlash';
+        }
+
+        // ---------- Profil ----------
+        async function fetchOrders() {
+            if (myOrders) return myOrders;
+            if (!tg || !tg.initData) return (myOrders = []);
+            const r = await fetch('/api/my-orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: tg.initData }) });
+            if (!r.ok) throw new Error('Yuklanmadi');
+            return (myOrders = await r.json());
+        }
+        async function renderProfile() {
+            $('user-name').textContent = TU ? [TU.first_name, TU.last_name].filter(Boolean).join(' ') : 'Mehmon';
+            $('user-id').textContent = TU ? (TU.username ? '@' + TU.username + ' · ' : '') + 'ID: ' + TU.id : '';
+            try {
+                const o = await fetchOrders();
+                $('stat-orders').textContent = o.length + ' ta';
+                $('stat-sum').textContent = fmt(o.filter(x => x.status !== 'Bekor qilindi').reduce((s, x) => s + Number(x.amount), 0));
+            } catch (_) {}
+        }
+        async function openOrders() {
+            openSheet('Mening buyurtmalarim', '<p class="text-xs text-gray-400 text-center py-6">Yuklanmoqda...</p>');
+            try {
+                const o = await fetchOrders();
+                $('sheet-body').innerHTML = o.map(x => `<div class="bg-white p-3 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-1.5 mb-3">
+                    <div class="flex justify-between items-center text-xs"><b>#MEL-${x.id}</b><span class="${STATUS_CLS[x.status] || ''} px-2.5 py-1 rounded-full font-medium text-[10px]">${esc(x.status)}</span></div>
+                    <p class="text-xs text-gray-600">${esc(x.product)}</p>
+                    <div class="flex justify-between text-[11px] text-gray-400"><span>${new Date(x.created_at).toLocaleDateString('en-GB')}</span><b class="text-melissaDark">${fmt(x.amount)}</b></div></div>`).join('')
+                    || '<div class="text-center py-10 text-gray-400"><i class="fa-solid fa-box-open text-3xl mb-2 text-melissaAccent"></i><p class="text-sm">Hozircha buyurtmalar yo\'q</p></div>';
+            } catch (_) { $('sheet-body').innerHTML = '<p class="text-xs text-gray-400 text-center py-6">Buyurtmalarni yuklab bo\'lmadi</p>'; }
+        }
+        function openAddress() {
+            openSheet('Yetkazib berish manzili', `<div class="space-y-3 text-xs">
+                <input id="addr-input" type="text" value="${esc(ls.get('mel_addr', ''))}" placeholder="Toshkent shahri, Amir Temur ko'chasi" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none select-text">
+                <button onclick="saveAddress()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl">Saqlash</button></div>`);
+        }
+        function saveAddress() { ls.set('mel_addr', $('addr-input').value.trim()); $('checkout-address').value = ''; closeSheet(); toast('Manzil saqlandi'); }
+
+        // ---------- Umumiy oyna va orqaga tugmasi ----------
+        function openSheet(title, html) { $('sheet-title').textContent = title; $('sheet-body').innerHTML = html; $('sheet').classList.remove('hidden'); syncBack(); }
+        function closeSheet() { $('sheet').classList.add('hidden'); syncBack(); }
+        function syncBack() {
+            if (!tg || !tg.BackButton) return;
+            (open('sheet') || open('checkout-modal') || open('product-modal') || open('search-bar') || tab !== 'home') ? tg.BackButton.show() : tg.BackButton.hide();
+        }
+        if (tg && tg.BackButton) tg.BackButton.onClick(() => {
+            if (open('sheet')) closeSheet();
+            else if (open('checkout-modal')) closeCheckout();
+            else if (open('product-modal')) closeModal();
+            else if (open('search-bar')) toggleSearch(false);
+            else switchTab('home');
+        });
+
+        // ---------- Boshlash ----------
+        if (TU && TU.photo_url) {
+            const img = `<img src="${esc(TU.photo_url)}" class="w-full h-full object-cover">`;
+            $('hdr-avatar').innerHTML = img; $('prof-avatar').innerHTML = img;
+        }
+        load();
+    </script>
+</body>
+</html>
