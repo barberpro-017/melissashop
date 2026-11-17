@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         tailwind.config = {
             theme: { extend: {
@@ -22,8 +23,13 @@
     </script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FDF6F0; color: #2C2C2C; }
-        #sidebar { transition: margin .3s ease, opacity .3s ease; }
-        #sidebar.closed { margin-left: -18rem; opacity: 0; pointer-events: none; }
+        #sidebar { transition: margin .3s ease, opacity .3s ease, transform .3s ease; }
+        @media (min-width: 1024px) { #sidebar.closed { margin-left: -18rem; opacity: 0; pointer-events: none; } }
+        @media (max-width: 1023px) {
+            #sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 50; overflow-y: auto; transform: translateX(-100%); box-shadow: 0 10px 40px rgba(0,0,0,.15); }
+            #sidebar.open { transform: translateX(0); }
+        }
+        .admin-section > .flex.justify-between { flex-wrap: wrap; gap: .5rem; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased selection:bg-melissaPeach">
@@ -45,7 +51,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Parol</label>
-                    <input type="password" id="login-pass" required autocomplete="current-password" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark transition">
+                    <div class="relative"><input type="password" id="login-pass" required autocomplete="current-password" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 pr-12 rounded-xl focus:outline-none focus:border-melissaDark transition"><button type="button" onclick="togglePass()" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-melissaDark w-9 h-9 flex items-center justify-center" title="Parolni ko'rsatish"><i id="pass-eye" class="fa-regular fa-eye"></i></button></div>
                 </div>
                 <p id="login-err" class="text-xs text-red-500 text-center hidden"></p>
                 <button id="login-btn" type="submit" class="w-full bg-melissaDark text-white text-sm font-semibold py-3.5 rounded-xl shadow-md hover:bg-black transition">Kirish</button>
@@ -58,7 +64,7 @@
 
     <!-- 2. ADMIN APP -->
     <div id="admin-app" class="hidden min-h-screen flex flex-col">
-        <header class="bg-white/80 backdrop-blur-md border-b border-melissaPeach/60 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <header class="bg-white/80 backdrop-blur-md border-b border-melissaPeach/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-30">
             <div class="flex items-center space-x-4">
                 <button onclick="toggleSidebar()" class="w-10 h-10 rounded-xl bg-melissaBg border border-melissaPeach flex items-center justify-center hover:bg-melissaPeach/40 transition">
                     <i class="fa-solid fa-bars text-melissaDark"></i>
@@ -67,11 +73,11 @@
                     <div class="w-8 h-8 rounded-full border border-melissaDark flex items-center justify-center bg-white">
                         <i class="fa-solid fa-feather text-xs"></i>
                     </div>
-                    <span class="font-serif font-bold text-lg tracking-wide">Melissa — Management</span>
+                    <span class="font-serif font-bold text-lg tracking-wide"><span class="hidden sm:inline">Melissa — Management</span><span class="sm:hidden">Melissa</span></span>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <span class="text-xs font-medium text-gray-600">Admin (Superuser)</span>
+                <span id="role-label" class="hidden sm:inline text-xs font-medium text-gray-600">Admin (Superuser)</span>
                 <button onclick="logout()" class="w-9 h-9 rounded-xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-100 transition" title="Chiqish">
                     <i class="fa-solid fa-right-from-bracket text-xs"></i>
                 </button>
@@ -79,21 +85,23 @@
         </header>
 
         <div class="flex flex-1 relative">
+            <div id="sb-backdrop" onclick="toggleSidebar()" class="hidden lg:hidden fixed inset-0 bg-melissaDark/40 z-40"></div>
             <aside id="sidebar" class="w-72 shrink-0 bg-white border-r border-melissaPeach/60 p-6 space-y-6 z-20">
                 <div class="space-y-1">
                     <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold px-3 mb-2">Asosiy menyu</p>
                     <button onclick="switchSection('dashboard')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold bg-melissaDark text-white transition" data-section="dashboard"><i class="fa-solid fa-chart-pie w-5"></i><span>1. Dashboard</span></button>
                     <button onclick="switchSection('orders')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="orders"><i class="fa-solid fa-bag-shopping w-5"></i><span>2. Buyurtmalar</span></button>
                     <button onclick="switchSection('products')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="products"><i class="fa-solid fa-shirt w-5"></i><span>3. Mahsulotlar</span></button>
-                    <button onclick="switchSection('bots')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="bots"><i class="fa-solid fa-robot w-5"></i><span>4. Bot nazorati</span></button>
-                    <button onclick="switchSection('analytics')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="analytics"><i class="fa-solid fa-chart-line w-5"></i><span>5. Analitika</span></button>
-                    <button onclick="switchSection('locations')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="locations"><i class="fa-solid fa-location-dot w-5"></i><span>6. Yetkazib berish nuqtalari</span></button>
-                    <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>7. Admin sozlamalari</span></button>
-                    <button onclick="switchSection('spin')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="spin"><i class="fa-solid fa-gift w-5"></i><span>8. Discount spin</span></button>
+                    <button onclick="switchSection('sellers')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="sellers"><i class="fa-solid fa-store w-5"></i><span>4. Sotuvchilar</span></button>
+                    <button onclick="switchSection('bots')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="bots"><i class="fa-solid fa-robot w-5"></i><span>5. Bot nazorati</span></button>
+                    <button onclick="switchSection('analytics')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="analytics"><i class="fa-solid fa-chart-line w-5"></i><span>6. Analitika</span></button>
+                    <button onclick="switchSection('locations')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="locations"><i class="fa-solid fa-location-dot w-5"></i><span>7. Yetkazib berish nuqtalari</span></button>
+                    <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>8. Admin sozlamalari</span></button>
+                    <button onclick="switchSection('discounts')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="discounts"><i class="fa-solid fa-gift w-5"></i><span>9. Chegirmalar</span></button>
                 </div>
             </aside>
 
-            <main class="flex-1 min-w-0 p-8 max-w-7xl mx-auto space-y-6">
+            <main class="flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
 
                 <!-- DASHBOARD -->
                 <section id="sec-dashboard" class="admin-section space-y-6">
@@ -110,7 +118,7 @@
                         </div>
                         <i class="fa-solid fa-feather absolute -right-3 -bottom-7 text-8xl text-white/50 -rotate-12"></i>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2">
                             <span class="text-xs text-gray-400 font-medium">Umumiy savdo</span>
                             <h3 id="st-sales" class="font-bold text-xl">0 so'm</h3>
@@ -164,19 +172,49 @@
                 </section>
 
                 <!-- ORDERS -->
-                <section id="sec-orders" class="admin-section hidden space-y-6">
+                <section id="sec-orders" class="admin-section hidden space-y-5">
                     <div class="flex justify-between items-center">
-                        <h2 class="font-serif font-bold text-2xl">Buyurtmalar ro'yxati</h2>
-                        <span id="orders-count" class="text-xs bg-melissaPeach px-3 py-1 rounded-full font-semibold">Jami: 0 ta buyurtma</span>
+                        <div class="flex items-center gap-3 flex-wrap"><h2 class="font-serif font-bold text-2xl">Buyurtmalar</h2><span id="orders-count" class="text-xs bg-melissaPeach px-3 py-1 rounded-full font-semibold">Jami: 0 ta buyurtma</span></div>
+                        <div class="relative">
+                            <button onclick="$('xl-menu').classList.toggle('hidden')" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition"><i class="fa-solid fa-file-excel mr-1.5"></i>Excel yuklab olish<i class="fa-solid fa-chevron-down text-[9px] ml-2"></i></button>
+                            <div id="xl-menu" class="hidden absolute right-0 mt-2 w-60 bg-white border border-melissaPeach/60 rounded-2xl shadow-xl p-2 z-30 text-xs">
+                                <button onclick="exportOrders('today')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-melissaBg"><b>Kunlik</b> <span class="text-gray-400">— bugun</span></button>
+                                <button onclick="exportOrders('week')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-melissaBg"><b>Haftalik</b> <span class="text-gray-400">— oxirgi 7 kun</span></button>
+                                <button onclick="exportOrders('month')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-melissaBg"><b>Oylik</b> <span class="text-gray-400">— shu oy</span></button>
+                                <button onclick="exportOrders('filter')" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-melissaBg"><b>Filtr natijasi</b> <span class="text-gray-400">— ko'rinib turgani</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ord-kpi" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+                    <div class="bg-white p-4 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <input id="of-q" oninput="onFilter('q', this.value)" placeholder="Qidirish: ID, mijoz, telefon, mahsulot..." class="md:col-span-2 bg-melissaBg border border-melissaPeach text-xs px-4 py-2.5 rounded-xl focus:outline-none focus:border-melissaDark">
+                            <select id="of-pay" onchange="onFilter('pay', this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-3 py-2.5 rounded-xl focus:outline-none"></select>
+                            <select id="of-seller" onchange="onFilter('seller', this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-3 py-2.5 rounded-xl focus:outline-none"></select>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                            <button onclick="setRange('today')" class="px-3 py-1.5 rounded-full bg-melissaBg border border-melissaPeach font-semibold hover:bg-melissaPeach/40">Bugun</button>
+                            <button onclick="setRange('yesterday')" class="px-3 py-1.5 rounded-full bg-melissaBg border border-melissaPeach font-semibold hover:bg-melissaPeach/40">Kecha</button>
+                            <button onclick="setRange('week')" class="px-3 py-1.5 rounded-full bg-melissaBg border border-melissaPeach font-semibold hover:bg-melissaPeach/40">7 kun</button>
+                            <button onclick="setRange('month')" class="px-3 py-1.5 rounded-full bg-melissaBg border border-melissaPeach font-semibold hover:bg-melissaPeach/40">Shu oy</button>
+                            <button onclick="setRange('all')" class="px-3 py-1.5 rounded-full bg-melissaBg border border-melissaPeach font-semibold hover:bg-melissaPeach/40">Hammasi</button>
+                            <input id="of-from" type="date" onchange="onFilter('from', this.value)" class="bg-melissaBg border border-melissaPeach px-3 py-1.5 rounded-xl focus:outline-none">
+                            <span class="text-gray-400">—</span>
+                            <input id="of-to" type="date" onchange="onFilter('to', this.value)" class="bg-melissaBg border border-melissaPeach px-3 py-1.5 rounded-xl focus:outline-none">
+                            <select id="of-sort" onchange="onFilter('sort', this.value)" class="bg-melissaBg border border-melissaPeach px-3 py-1.5 rounded-xl focus:outline-none"><option value="new">Yangilari birinchi</option><option value="old">Eskilari birinchi</option><option value="sum">Summa bo'yicha</option></select>
+                            <button onclick="resetOF()" class="px-3 py-1.5 rounded-full text-red-500 font-semibold hover:bg-red-50"><i class="fa-solid fa-rotate-left mr-1"></i>Tozalash</button>
+                        </div>
+                        <div id="of-status" class="flex flex-wrap gap-2"></div>
                     </div>
                     <div class="bg-white rounded-2xl border border-melissaPeach/60 overflow-x-auto shadow-sm">
                         <table class="w-full text-left text-xs">
                             <thead class="bg-melissaBg border-b border-melissaPeach/60 text-gray-500 uppercase">
-                                <tr><th class="p-4">ID</th><th class="p-4">Mijoz</th><th class="p-4">Mahsulot</th><th class="p-4">Summa</th><th class="p-4">Holati</th></tr>
+                                <tr><th class="p-4">ID</th><th class="p-4">Sana</th><th class="p-4">Mijoz</th><th class="p-4">Mahsulotlar</th><th class="p-4">To'lov</th><th class="p-4">Sotuvchi</th><th class="p-4">Summa</th><th class="p-4">Holati</th></tr>
                             </thead>
                             <tbody id="orders-body" class="divide-y divide-gray-100"></tbody>
                         </table>
                     </div>
+                    <div id="orders-pager" class="flex items-center justify-center gap-3"></div>
                 </section>
 
                 <!-- PRODUCTS -->
@@ -188,8 +226,18 @@
                             <button onclick="addProduct()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi mahsulot qo'shish</button>
                         </div>
                     </div>
-                    <div id="cat-chips" class="flex flex-wrap gap-2"></div>
+                    <div class="flex flex-wrap items-center gap-2"><select id="prod-seller" onchange="setPSF(this.value)" class="hidden bg-white border border-melissaPeach text-xs font-semibold px-3 py-1.5 rounded-full focus:outline-none"></select><div id="cat-chips" class="flex flex-wrap gap-2"></div></div>
                     <div id="products-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </section>
+
+                <!-- SELLERS -->
+                <section id="sec-sellers" class="admin-section hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-serif font-bold text-2xl">Sotuvchilar</h2>
+                        <button onclick="addSeller()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi sotuvchi</button>
+                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed max-w-2xl">Sotuvchi saytga o'z logini va paroli bilan kiradi va faqat o'z mahsulotlari hamda o'z mahsulotlari kiritilgan buyurtmalarni ko'radi. Kelish narxi va foyda boshqa sotuvchilarga ko'rinmaydi.</p>
+                    <div id="sellers-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </section>
 
                 <!-- BOTS -->
@@ -245,9 +293,11 @@
                     </div>
                 </section>
 
-                <!-- DISCOUNT SPIN -->
-                <section id="sec-spin" class="admin-section hidden space-y-6">
-                    <h2 class="font-serif font-bold text-2xl">Discount spin</h2>
+                <!-- DISCOUNTS -->
+                <section id="sec-discounts" class="admin-section hidden space-y-6">
+                    <h2 class="font-serif font-bold text-2xl">Chegirmalar</h2>
+                    <div id="disc-tabs" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+                    <div id="disc-panel" class="space-y-4"></div>
                 </section>
             </main>
         </div>
@@ -270,7 +320,7 @@
 
     <!-- MODAL -->
     <div id="modal" class="hidden fixed inset-0 z-[60] bg-melissaDark/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <form id="modal-form" class="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-4">
+        <form id="modal-form" class="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-melissaPeach/60 shadow-xl space-y-4">
             <h3 id="modal-title" class="font-serif font-bold text-xl"></h3>
             <div id="modal-fields" class="space-y-3"></div>
             <div class="flex justify-end space-x-2 pt-2">
@@ -292,7 +342,7 @@
             'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700',
             'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600'
         };
-        let user = null, products = [], orders = [], locations = [], categories = [], costs = {}, catFilter = '', pending = [];
+        let user = null, products = [], orders = [], locations = [], categories = [], costs = {}, catFilter = '', sellers = [], promos = [], banner = null;
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const money = n => Number(n || 0).toLocaleString('en-US') + " so'm";
@@ -310,11 +360,11 @@
             btn.disabled = false; btn.textContent = 'Kirish';
             if (error) { err.textContent = "Login yoki parol noto'g'ri"; err.classList.remove('hidden'); return; }
             user = data.user;
-            $('login-pass').value = '';
+            $('login-pass').value = ''; $('login-pass').type = 'password'; $('pass-eye').className = 'fa-regular fa-eye';
             $('login-screen').classList.add('hidden');
             $('admin-app').classList.remove('hidden');
             $('set-name').value = user.user_metadata?.full_name || '';
-            fillSettings(); tick(); clearInterval(window._t); window._t = setInterval(tick, 30000);
+            fillSettings(); applyRole(); tick(); clearInterval(window._t); window._t = setInterval(tick, 30000);
             switchSection('dashboard');
             loadAll();
         }
@@ -325,8 +375,13 @@
         }
 
         // ---------- NAV ----------
-        function toggleSidebar() { $('sidebar').classList.toggle('closed'); }
+        function toggleSidebar() {
+            if (window.innerWidth < 1024) { const o = $('sidebar').classList.toggle('open'); $('sb-backdrop').classList.toggle('hidden', !o); }
+            else $('sidebar').classList.toggle('closed');
+        }
         function switchSection(secId) {
+            if (isSeller() && ADMIN_ONLY.includes(secId)) secId = 'products';
+            if (window.innerWidth < 1024) { $('sidebar').classList.remove('open'); $('sb-backdrop').classList.add('hidden'); }
             document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
             $(`sec-${secId}`).classList.remove('hidden');
             document.querySelectorAll('.sidebar-btn').forEach(btn => {
@@ -337,17 +392,43 @@
         }
 
         // ---------- DATA ----------
+        // ---------- ROL ----------
+        const isSeller = () => !!(user && user.app_metadata && user.app_metadata.role === 'seller');
+        const mySid = () => Number(user.app_metadata.seller_id);
+        const mainSeller = () => sellers.find(s => s.is_main) || sellers[0] || { id: 0, name: 'Melissa' };
+        const sName = id => (sellers.find(s => s.id === id) || mainSeller()).name;
+        const ADMIN_ONLY = ['dashboard', 'sellers', 'bots', 'analytics', 'locations', 'discounts'];
+        function applyRole() {
+            const S = isSeller();
+            document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('hidden', S && ADMIN_ONLY.includes(b.dataset.section)));
+            $('role-label').textContent = S ? 'Sotuvchi' : 'Admin (Superuser)';
+        }
+        function togglePass() {
+            const i = $('login-pass'), show = i.type === 'password';
+            i.type = show ? 'text' : 'password'; $('pass-eye').className = 'fa-regular ' + (show ? 'fa-eye-slash' : 'fa-eye');
+        }
+        async function apiCall(url, method, data) {
+            const { data: { session } } = await sb.auth.getSession();
+            const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify(data || {}) });
+            let j = {}; try { j = await r.json(); } catch (_) {}
+            if (!r.ok) throw new Error(j.error || 'Server xatosi ' + r.status);
+            return j;
+        }
         async function loadAll() {
-            const [p, o, l, c, pc] = await Promise.all([
-                sb.from('products').select('*').order('created_at', { ascending: false }),
-                sb.from('orders').select('*').order('created_at', { ascending: false }),
-                sb.from('locations').select('*').order('created_at', { ascending: true }),
-                sb.from('categories').select('*').order('name'),
-                sb.from('product_costs').select('*')
+            const S = isSeller(), none = Promise.resolve({ data: [], error: null });
+            const T = (t, c, asc) => sb.from(t).select('*').order(c, { ascending: asc });
+            const sellerOrders = async () => { try { return { data: await apiCall('/api/seller-orders', 'POST', {}), error: null }; } catch (e) { return { data: [], error: e }; } };
+            const rs = await Promise.all([
+                T('products', 'created_at', false), S ? sellerOrders() : T('orders', 'created_at', false), S ? none : T('locations', 'created_at', true),
+                T('categories', 'name', true), sb.from('product_costs').select('*'), T('sellers', 'id', true),
+                S ? none : sb.from('banner_settings').select('*').eq('id', 1).maybeSingle(), S ? none : T('promo_codes', 'created_at', false)
             ]);
-            if (fail(p.error) || fail(o.error) || fail(l.error) || fail(c.error) || fail(pc.error)) return;
-            products = p.data; orders = o.data; locations = l.data; categories = c.data; costs = Object.fromEntries(pc.data.map(x => [x.product_id, Number(x.cost_price)]));
-            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); loadBots();
+            if (rs.some(x => fail(x.error))) return;
+            const [p, o, l, c, pc, sl, bn, pr] = rs;
+            products = p.data; orders = o.data; locations = l.data; categories = c.data; sellers = sl.data; banner = bn.data; promos = pr.data;
+            costs = Object.fromEntries(pc.data.map(x => [x.product_id, Number(x.cost_price)]));
+            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); renderSellers(); initDiscounts();
+            if (!S) loadBots();
         }
 
         function renderDashboard() {
@@ -376,53 +457,116 @@
                 </div>`).join('') || '<p class="text-gray-400 py-3">Hozircha buyurtma yo\'q</p>';
         }
 
+        // ---------- BUYURTMALAR ----------
+        const OF = { q: '', status: '', pay: '', seller: '', from: '', to: '', sort: 'new', page: 1 };
+        const PER = 15;
+        const dkey = d => new Date(d).toLocaleDateString('en-CA');
+        const fdate = d => new Date(d).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const oItems = o => (o.items && o.items.length) ? o.items : [{ name: o.product, size: o.size, qty: 1, price: Number(o.amount), seller_id: null }];
+        const oSellers = o => [...new Set(oItems(o).map(i => sName(i.seller_id)))];
+        function filtered(list = orders, f = OF) {
+            const q = f.q.trim().toLowerCase();
+            return list.filter(o => {
+                if (f.status && o.status !== f.status) return false;
+                if (f.pay && o.payment !== f.pay) return false;
+                if (f.seller && !oItems(o).some(i => String(i.seller_id || mainSeller().id) === f.seller)) return false;
+                const d = dkey(o.created_at);
+                if ((f.from && d < f.from) || (f.to && d > f.to)) return false;
+                return !q || `${o.id} mel-${o.id} ${o.customer} ${o.phone || ''} ${o.product} ${o.address || ''}`.toLowerCase().includes(q);
+            }).sort(f.sort === 'old' ? (a, b) => new Date(a.created_at) - new Date(b.created_at) : f.sort === 'sum' ? (a, b) => b.amount - a.amount : (a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+        function onFilter(k, v) { OF[k] = v; OF.page = 1; renderOrders(); }
+        function setRange(k) {
+            const t = new Date(), d = n => { const x = new Date(); x.setDate(x.getDate() - n); return dkey(x); };
+            const m = { all: ['', ''], today: [d(0), d(0)], yesterday: [d(1), d(1)], week: [d(6), d(0)], month: [dkey(new Date(t.getFullYear(), t.getMonth(), 1)), d(0)] }[k];
+            OF.from = m[0]; OF.to = m[1]; OF.page = 1; renderOrders();
+        }
+        function resetOF() { Object.assign(OF, { q: '', status: '', pay: '', seller: '', from: '', to: '', sort: 'new', page: 1 }); $('of-q').value = ''; renderOrders(); }
         function renderOrders() {
+            const S = isSeller(), list = filtered();
+            const pays = [...new Set(orders.map(o => o.payment).filter(Boolean))];
+            $('of-pay').innerHTML = '<option value="">Barcha to\'lovlar</option>' + pays.map(p => `<option ${p === OF.pay ? 'selected' : ''}>${esc(p)}</option>`).join('');
+            $('of-seller').innerHTML = '<option value="">Barcha sotuvchilar</option>' + sellers.map(s => `<option value="${s.id}" ${String(s.id) === OF.seller ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
+            $('of-seller').classList.toggle('hidden', S || sellers.length < 2);
+            $('of-from').value = OF.from; $('of-to').value = OF.to; $('of-sort').value = OF.sort;
+            const cnt = s => orders.filter(o => !s || o.status === s).length;
+            $('of-status').innerHTML = ['', ...STATUSES].map(s => `<button onclick="onFilter('status','${s}')" class="px-3 py-1.5 rounded-full border text-xs font-semibold transition ${OF.status === s ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach text-gray-600'}">${s || 'Hammasi'} <span class="opacity-60">${cnt(s)}</span></button>`).join('');
+            const ok = list.filter(o => o.status !== 'Bekor qilindi'), rev = sum(ok);
+            const kp = (l, v, ic) => `<div class="bg-white p-4 rounded-2xl border border-melissaPeach/60 shadow-sm"><div class="flex justify-between items-center"><span class="text-[11px] text-gray-400 font-medium">${l}</span><i class="fa-solid ${ic} text-melissaAccent text-xs"></i></div><p class="font-bold text-lg mt-1">${v}</p></div>`;
+            $('ord-kpi').innerHTML = kp('Buyurtmalar', list.length + ' ta', 'fa-bag-shopping') + kp('Savdo summasi', money(rev), 'fa-wallet') + kp('Sof foyda', money(profit(ok)), 'fa-coins') + kp("O'rtacha chek", money(ok.length ? Math.round(rev / ok.length) : 0), 'fa-receipt');
             $('orders-count').textContent = `Jami: ${orders.length} ta buyurtma`;
-            $('orders-body').innerHTML = orders.map(o => `
-                <tr onclick="openOrder(${o.id})" class="cursor-pointer hover:bg-melissaBg/60 transition">
-                    <td class="p-4 font-bold">#MEL-${o.id}</td>
-                    <td class="p-4">${esc(o.customer)}</td>
-                    <td class="p-4">${esc(o.product)}${o.size ? ' (' + esc(o.size) + ')' : ''}</td>
-                    <td class="p-4 font-bold">${money(o.amount)}</td>
-                    <td class="p-4"><select onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)" class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium focus:outline-none cursor-pointer">
-                        ${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-                </tr>`).join('') || '<tr><td colspan="5" class="p-6 text-center text-gray-400">Buyurtmalar yo\'q</td></tr>';
+            const pages = Math.max(1, Math.ceil(list.length / PER)); OF.page = Math.min(OF.page, pages);
+            $('orders-body').innerHTML = list.slice((OF.page - 1) * PER, OF.page * PER).map(o => {
+                const th = oItems(o).slice(0, 3).map(i => i.img ? `<img src="${esc(i.img)}" class="w-9 h-9 rounded-lg object-cover border-2 border-white">` : '<span class="w-9 h-9 rounded-lg bg-melissaBg border-2 border-white flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-xs"></i></span>').join('');
+                return `<tr onclick="openOrder(${o.id})" class="cursor-pointer hover:bg-melissaBg/60 transition">
+                    <td class="p-4 font-bold whitespace-nowrap">#MEL-${o.id}</td>
+                    <td class="p-4 whitespace-nowrap text-gray-500">${fdate(o.created_at)}</td>
+                    <td class="p-4"><p class="font-semibold">${esc(o.customer)}</p><p class="text-gray-400">${esc(o.phone || '')}</p></td>
+                    <td class="p-4"><div class="flex items-center gap-2 min-w-[200px]"><div class="flex -space-x-2 shrink-0">${th}</div><span class="text-gray-600 line-clamp-2">${esc(o.product)}</span></div></td>
+                    <td class="p-4 whitespace-nowrap">${esc(o.payment || '—')}</td>
+                    <td class="p-4 text-gray-500">${esc(oSellers(o).join(', '))}</td>
+                    <td class="p-4 font-bold whitespace-nowrap">${money(o.amount)}</td>
+                    <td class="p-4"><select ${S ? 'disabled' : ''} onclick="event.stopPropagation()" onchange="setStatus(${o.id}, this.value)" class="${STATUS_CLS[o.status]} px-2.5 py-1 rounded-full font-medium focus:outline-none ${S ? '' : 'cursor-pointer'}">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`;
+            }).join('') || '<tr><td colspan="8" class="p-8 text-center text-gray-400">Buyurtmalar topilmadi</td></tr>';
+            $('orders-pager').innerHTML = pages > 1 ? `<button ${OF.page <= 1 ? 'disabled' : ''} onclick="OF.page--;renderOrders()" class="px-3 py-1.5 rounded-xl border border-melissaPeach bg-white text-xs disabled:opacity-40"><i class="fa-solid fa-chevron-left"></i></button><span class="text-xs text-gray-500">${OF.page} / ${pages}</span><button ${OF.page >= pages ? 'disabled' : ''} onclick="OF.page++;renderOrders()" class="px-3 py-1.5 rounded-xl border border-melissaPeach bg-white text-xs disabled:opacity-40"><i class="fa-solid fa-chevron-right"></i></button>` : '';
         }
         async function setStatus(id, status) {
+            if (isSeller()) return;
             const { error } = await sb.from('orders').update({ status }).eq('id', id);
             if (fail(error)) return;
             orders.find(o => o.id === id).status = status; refreshViews();
+            if (!$('detail').classList.contains('hidden') && $('detail-title').textContent === 'Buyurtma #MEL-' + id) openOrder(id);
         }
 
         const CAT_ACTIVE = 'bg-melissaDark text-white border-melissaDark', CAT_IDLE = 'bg-white text-gray-600 border-melissaPeach';
-        function setCat(i) { catFilter = i < 0 ? '' : categories[i].name; renderProducts(); }
+        let psf = '';
+        const selF = (name, label, opts, val, attrs = '') => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${label}</label><select name="${name}" ${attrs} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${opts.map(o => `<option value="${esc(o.v)}" ${String(o.v) === String(val) ? 'selected' : ''}>${esc(o.l)}</option>`).join('')}</select></div>`;
+        function setCat(id) { catFilter = id; renderProducts(); }
+        function setPSF(v) { psf = v; if (catFilter) { const c = categories.find(x => x.id === catFilter); if (c && v && String(c.seller_id) !== v) catFilter = ''; } renderProducts(); }
         function renderChips() {
-            const cnt = n => products.filter(p => p.category === n).length;
-            $('cat-chips').innerHTML = `<button onclick="setCat(-1)" class="px-3 py-1.5 rounded-full border text-xs font-semibold ${!catFilter ? CAT_ACTIVE : CAT_IDLE}">Barchasi <span class="opacity-60">${products.length}</span></button>` +
-                categories.map((c, i) => `<span class="inline-flex items-center rounded-full border text-xs font-semibold ${catFilter === c.name ? CAT_ACTIVE : CAT_IDLE}"><button onclick="setCat(${i})" class="pl-3 pr-2 py-1.5">${esc(c.name)} <span class="opacity-60">${cnt(c.name)}</span></button><button onclick="delCategory(${c.id})" class="pr-3 opacity-50 hover:opacity-100" title="O'chirish"><i class="fa-solid fa-xmark text-[9px]"></i></button></span>`).join('');
+            const S = isSeller(), multi = sellers.length > 1 && !S;
+            const cnt = c => products.filter(p => p.category === c.name && p.seller_id === c.seller_id).length;
+            const list = categories.filter(c => S ? c.seller_id === mySid() : (!psf || String(c.seller_id) === psf));
+            $('cat-chips').innerHTML = `<button onclick="setCat('')" class="px-3 py-1.5 rounded-full border text-xs font-semibold ${!catFilter ? CAT_ACTIVE : CAT_IDLE}">Barchasi <span class="opacity-60">${products.length}</span></button>` +
+                list.map(c => `<span class="inline-flex items-center rounded-full border text-xs font-semibold ${catFilter === c.id ? CAT_ACTIVE : CAT_IDLE}"><button onclick="setCat(${c.id})" class="pl-3 pr-2 py-1.5">${esc(c.name)}${multi ? ` <span class="opacity-50 font-normal">· ${esc(sName(c.seller_id))}</span>` : ''} <span class="opacity-60">${cnt(c)}</span></button><button onclick="delCategory(${c.id})" class="pr-3 opacity-50 hover:opacity-100" title="O'chirish"><i class="fa-solid fa-xmark text-[9px]"></i></button></span>`).join('');
         }
         function renderProducts() {
             renderChips();
-            const list = catFilter ? products.filter(p => p.category === catFilter) : products;
-            $('products-grid').innerHTML = list.map(p => { const im = p.images || []; return `
+            const S = isSeller(), ps = $('prod-seller');
+            ps.classList.toggle('hidden', S || sellers.length < 2);
+            ps.innerHTML = '<option value="">Barcha sotuvchilar</option>' + sellers.map(s => `<option value="${s.id}" ${String(s.id) === psf ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
+            const c = categories.find(x => x.id === catFilter);
+            const list = products.filter(p => (!c || (p.category === c.name && p.seller_id === c.seller_id)) && (!psf || String(p.seller_id) === psf));
+            $('products-grid').innerHTML = list.map(p => {
+                const im = p.images || [], cost = costs[p.id] || 0, sp = Math.round(p.price * (100 - (p.discount_percent || 0)) / 100);
+                return `
                 <div onclick="openProduct(${p.id})" class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm relative cursor-pointer hover:shadow-md transition">
-                    <button onclick="event.stopPropagation();delProduct(${p.id})" class="absolute top-6 right-6 z-10 w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                    <div class="absolute top-6 right-6 z-10 flex gap-1.5">
+                        <button onclick="event.stopPropagation();productForm(${p.id})" class="w-8 h-8 rounded-lg bg-white/90 text-melissaDark shadow flex items-center justify-center hover:bg-melissaBg" title="Tahrirlash"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="event.stopPropagation();delProduct(${p.id})" class="w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                    </div>
                     <div class="h-32 bg-gray-100 rounded-xl overflow-hidden relative">
                         ${im[0] ? `<img src="${esc(im[0])}" loading="lazy" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-2xl"></i></div>'}
                         ${im.length > 1 ? `<span class="absolute bottom-2 left-2 bg-melissaDark/80 text-white text-[10px] px-2 py-0.5 rounded-full"><i class="fa-regular fa-images mr-1"></i>${im.length}</span>` : ''}
+                        ${p.discount_percent ? `<span class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">-${p.discount_percent}%</span>` : ''}
                     </div>
                     <h4 class="font-serif font-semibold text-sm">${esc(p.name)}</h4>
-                    <p class="text-[10px] text-gray-400">${esc(p.category)}</p>
-                    <p class="text-xs font-bold text-melissaDark">Sotuv: ${money(p.price)}</p>
-                    <p class="text-[10px] text-gray-400">Kelish: ${money(costs[p.id] || 0)} · <span class="text-green-600 font-semibold">Foyda: ${money(p.price - (costs[p.id] || 0))}</span></p>
+                    <p class="text-[10px] text-gray-400">${esc(p.category)}${sellers.length > 1 && !S ? ' · ' + esc(sName(p.seller_id)) : ''}</p>
+                    <p class="text-xs font-bold text-melissaDark">Sotuv: ${p.discount_percent ? `<s class="text-gray-400 font-normal">${money(p.price)}</s> ` : ''}${money(sp)}</p>
+                    <p class="text-[10px] text-gray-400">Kelish: ${money(cost)} · <span class="text-green-600 font-semibold">Foyda: ${money(sp - cost)}</span></p>
+                    ${(p.sizes || []).length ? `<p class="text-[10px] text-gray-400 truncate">O'lcham: ${sortSizes(p.sizes).join(', ')}</p>` : '<p class="text-[10px] text-amber-600">O\'lcham kiritilmagan</p>'}
                 </div>`; }).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
         }
         function openProduct(id) {
             const p = products.find(x => x.id === id); if (!p) return;
-            const im = p.images || [];
+            const im = p.images || [], cost = costs[p.id] || 0, sp = Math.round(p.price * (100 - (p.discount_percent || 0)) / 100);
+            const box = (l, v, c = '') => `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">${l}</p><p class="text-sm font-semibold ${c}">${v}</p></div>`;
             $('detail-title').textContent = p.name;
             $('detail-body').innerHTML = (im.length ? `<div class="grid grid-cols-2 gap-3">${im.map(u => `<img src="${esc(u)}" class="w-full aspect-square object-cover rounded-2xl border border-melissaPeach/60">`).join('')}</div>` : '<p class="text-xs text-gray-400">Rasm yo\'q</p>') +
-                `<div class="grid grid-cols-2 gap-3"><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kategoriya</p><p class="text-sm font-semibold">${esc(p.category)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Sotuv narxi</p><p class="text-sm font-semibold">${money(p.price)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Kelish narxi</p><p class="text-sm font-semibold">${money(costs[p.id] || 0)}</p></div><div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">Sof foyda (1 dona)</p><p class="text-sm font-semibold text-green-600">${money(p.price - (costs[p.id] || 0))}</p></div></div>${p.description ? `<p class="text-xs text-gray-600 leading-relaxed">${esc(p.description)}</p>` : ''}`;
+                `<div class="grid grid-cols-2 gap-3">${box('Sotuvchi', esc(sName(p.seller_id)))}${box('Kategoriya', esc(p.category))}${box('Sotuv narxi', money(p.price))}${box('Kelish narxi', money(cost))}${p.discount_percent ? box('Chegirma', '-' + p.discount_percent + '% → ' + money(sp), 'text-red-500') : ''}${box('Sof foyda (1 dona)', money(sp - cost), 'text-green-600')}</div>` +
+                `<div><p class="text-[10px] text-gray-400 uppercase mb-1.5">O'lchamlar</p><div class="flex flex-wrap gap-1.5">${sortSizes(p.sizes || []).map(s => `<span class="px-2.5 py-1 rounded-lg bg-melissaBg border border-melissaPeach text-xs font-semibold">${s}</span>`).join('') || '<span class="text-xs text-gray-400">—</span>'}</div></div>` +
+                (p.description ? `<p class="text-xs text-gray-600 leading-relaxed">${esc(p.description)}</p>` : '') +
+                `<button onclick="closeDetail();productForm(${p.id})" class="bg-melissaDark text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-black transition">Tahrirlash</button>`;
             $('detail').classList.remove('hidden');
         }
         async function delProduct(id) {
@@ -432,21 +576,22 @@
             if (fail(error)) return;
             const paths = ((p && p.images) || []).map(u => decodeURIComponent(u.split('/').pop()));
             if (paths.length) await sb.storage.from('product-images').remove(paths);
-            products = products.filter(x => x.id !== id); renderProducts(); refreshViews();
+            products = products.filter(x => x.id !== id); renderProducts(); refreshViews(); renderSellers();
         }
         function addCategory() {
-            openModal('Yangi kategoriya', inp('name', 'Kategoriya nomi', 'text', "Ko'ylak, Kostyum..."), async f => {
-                const { error } = await sb.from('categories').insert({ name: f.name.trim() });
-                if (error && error.code === '23505') return alert('Bunday kategoriya allaqachon bor');
+            const S = isSeller();
+            openModal('Yangi kategoriya', (S ? '' : selF('seller_id', 'Sotuvchi', sellers.map(s => ({ v: s.id, l: s.name })), mainSeller().id)) + inp('name', 'Kategoriya nomi', 'text', "Ko'ylak, Kostyum..."), async f => {
+                const { error } = await sb.from('categories').insert({ name: f.name.trim(), seller_id: S ? mySid() : Number(f.seller_id) });
+                if (error && error.code === '23505') return alert('Bu sotuvchida bunday kategoriya allaqachon bor');
                 if (!fail(error)) { closeModal(); loadAll(); }
             });
         }
         async function delCategory(id) {
-            const c = categories.find(x => x.id === id), n = products.filter(p => p.category === c.name).length;
+            const c = categories.find(x => x.id === id), n = products.filter(p => p.category === c.name && p.seller_id === c.seller_id).length;
             if (n) return alert(`"${c.name}" kategoriyasida ${n} ta mahsulot bor. Avval ularni o'chiring.`);
             if (!confirm(`"${c.name}" kategoriyasi o'chirilsinmi?`)) return;
             const { error } = await sb.from('categories').delete().eq('id', id);
-            if (!fail(error)) { if (catFilter === c.name) catFilter = ''; loadAll(); }
+            if (!fail(error)) { if (catFilter === id) catFilter = ''; loadAll(); }
         }
 
         function renderLocations() {
@@ -467,8 +612,9 @@
         }
 
         // ---------- MODAL ----------
-        const inp = (name, label, type = 'text', ph = '') => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${label}</label>
-            <input name="${name}" type="${type}" placeholder="${ph}" ${['image_url', 'description'].includes(name) ? '' : 'required'} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`;
+        const OPT = ['image_url', 'description', 'phone', 'new_password'];
+        const inp = (name, label, type = 'text', ph = '', val = '') => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${label}</label>
+            <input name="${name}" type="${type}" ${type === 'number' ? 'min="0" step="any"' : ''} value="${esc(val)}" placeholder="${esc(ph)}" ${OPT.includes(name) ? '' : 'required'} class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`;
         function openModal(title, fields, onSubmit) {
             $('modal-title').textContent = title; $('modal-fields').innerHTML = fields;
             $('modal-form').onsubmit = async e => { e.preventDefault(); await onSubmit(Object.fromEntries(new FormData(e.target))); };
@@ -476,6 +622,9 @@
         }
         function closeModal() { $('modal').classList.add('hidden'); }
 
+        const L_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], N_SIZES = Array.from({ length: 13 }, (_, i) => String(36 + i * 2));
+        const sortSizes = a => [...a].sort((x, y) => { const i = L_SIZES.indexOf(x), j = L_SIZES.indexOf(y); return i > -1 && j > -1 ? i - j : i > -1 ? -1 : j > -1 ? 1 : Number(x) - Number(y); });
+        let imgs = [], selSizes = new Set(), editId = null;
         async function shrink(file) {
             const bmp = await createImageBitmap(file), k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
             const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
@@ -483,41 +632,67 @@
             return new Promise(r => c.toBlob(r, 'image/jpeg', .85));
         }
         function drawPrev() {
-            $('img-prev').innerHTML = pending.map((it, i) => `<div class="relative aspect-square rounded-xl overflow-hidden border border-melissaPeach"><img src="${it.url}" class="w-full h-full object-cover"><button type="button" onclick="rmImg(${i})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/90 text-red-500 text-[9px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div>`).join('') +
-                (pending.length < 4 ? `<button type="button" onclick="$('img-input').click()" class="aspect-square rounded-xl border-2 border-dashed border-melissaPeach text-gray-400 hover:border-melissaDark hover:text-melissaDark flex flex-col items-center justify-center text-[10px] gap-1"><i class="fa-solid fa-plus"></i>Rasm</button>` : '');
+            $('img-prev').innerHTML = imgs.map((it, i) => `<div class="relative aspect-square rounded-xl overflow-hidden border border-melissaPeach"><img src="${esc(it.url)}" class="w-full h-full object-cover"><button type="button" onclick="rmImg(${i})" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/90 text-red-500 text-[9px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div>`).join('') +
+                (imgs.length < 4 ? `<button type="button" onclick="$('img-input').click()" class="aspect-square rounded-xl border-2 border-dashed border-melissaPeach text-gray-400 hover:border-melissaDark hover:text-melissaDark flex flex-col items-center justify-center text-[10px] gap-1"><i class="fa-solid fa-plus"></i>Rasm</button>` : '');
         }
-        function rmImg(i) { URL.revokeObjectURL(pending[i].url); pending.splice(i, 1); drawPrev(); }
-        function addProduct() {
-            if (!categories.length) { alert("Avval kategoriya qo'shing"); return addCategory(); }
-            pending = [];
-            const sel = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Kategoriya</label><select name="category" required class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${categories.map(c => `<option>${esc(c.name)}</option>`).join('')}</select></div>`;
-            const up = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Rasmlar (4 tagacha)</label><div id="img-prev" class="grid grid-cols-4 gap-2"></div><input id="img-input" type="file" accept="image/*" multiple class="hidden"></div>`;
-            openModal('Yangi mahsulot', inp('name', 'Nomi') + sel + inp('cost_price', "Kelish narxi (so'm)", 'number') + inp('price', "Sotuv narxi (so'm)", 'number') + inp('description', 'Tavsif (ixtiyoriy)') + up, async f => {
-                if (+f.price <= 0 || +f.cost_price < 0) return alert("Narxlarni to'g'ri kiriting");
-                const btn = $('modal-form').querySelector('[type=submit]');
-                btn.disabled = true; btn.textContent = 'Yuklanmoqda...';
-                try {
-                    const urls = [];
-                    for (const it of pending) {
-                        const path = crypto.randomUUID() + '.jpg';
-                        const { error: ue } = await sb.storage.from('product-images').upload(path, it.blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
-                        if (ue) throw ue;
-                        urls.push(sb.storage.from('product-images').getPublicUrl(path).data.publicUrl);
-                    }
-                    const { data: np, error } = await sb.from('products').insert({ name: f.name.trim(), category: f.category, price: +f.price, description: (f.description || '').trim() || null, images: urls }).select('id').single();
-                    if (error) throw error;
-                    const ce = (await sb.from('product_costs').insert({ product_id: np.id, cost_price: +f.cost_price })).error;
-                    if (ce) throw ce;
-                    closeModal(); loadAll();
-                } catch (err) { alert('Xatolik: ' + err.message); }
-                btn.disabled = false; btn.textContent = 'Saqlash';
-            });
+        function rmImg(i) { if (imgs[i].blob) URL.revokeObjectURL(imgs[i].url); imgs.splice(i, 1); drawPrev(); }
+        function sizeChips() {
+            const chip = s => `<button type="button" onclick="togSize('${s}')" class="min-w-[44px] px-3 py-1.5 rounded-xl border text-xs font-semibold transition ${selSizes.has(s) ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach text-gray-600'}">${s}</button>`;
+            $('size-chips').innerHTML = `<p class="text-[10px] text-gray-400 uppercase mb-1.5">Harfli (XS – XXXL)</p><div class="flex flex-wrap gap-2 mb-3">${L_SIZES.map(chip).join('')}</div><p class="text-[10px] text-gray-400 uppercase mb-1.5">Raqamli (36 – 60)</p><div class="flex flex-wrap gap-2">${N_SIZES.map(chip).join('')}</div><p class="text-[11px] text-gray-400 mt-2">Tanlangan: ${selSizes.size ? sortSizes(selSizes).join(', ') : '—'}</p>`;
+        }
+        function togSize(s) { selSizes.has(s) ? selSizes.delete(s) : selSizes.add(s); sizeChips(); }
+        const catOptions = (sid, cur) => categories.filter(c => c.seller_id === Number(sid)).map(c => `<option ${c.name === cur ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+        function onSellerChange(sid) { $('pf-cat').innerHTML = catOptions(sid, ''); }
+        function addProduct() { productForm(null); }
+        function productForm(id) {
+            const p = id ? products.find(x => x.id === id) : null, S = isSeller();
+            editId = p ? p.id : null;
+            const sid = p ? p.seller_id : (S ? mySid() : mainSeller().id);
+            if (!p && !catOptions(sid, '')) { alert("Avval kategoriya qo'shing"); return addCategory(); }
+            imgs = ((p && p.images) || []).map(u => ({ url: u }));
+            selSizes = new Set((p && p.sizes) || []);
+            const sellerSel = S ? '' : selF('seller_id', 'Sotuvchi', sellers.map(s => ({ v: s.id, l: s.name })), sid, 'onchange="onSellerChange(this.value)"');
+            const catSel = `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Kategoriya</label><select id="pf-cat" name="category" required class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${catOptions(sid, p && p.category)}</select></div>`;
+            openModal(p ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot',
+                sellerSel + catSel + inp('name', 'Nomi', 'text', '', p ? p.name : '') +
+                inp('cost_price', "Kelish narxi (so'm)", 'number', '', p ? (costs[p.id] || 0) : '') + inp('price', "Sotuv narxi (so'm)", 'number', '', p ? p.price : '') +
+                inp('description', 'Tavsif (ixtiyoriy)', 'text', '', p ? (p.description || '') : '') +
+                `<div><label class="block text-xs font-semibold text-gray-700 mb-1.5">O'lchamlar</label><div id="size-chips"></div></div>` +
+                `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Rasmlar (4 tagacha)</label><div id="img-prev" class="grid grid-cols-4 gap-2"></div><input id="img-input" type="file" accept="image/*" multiple class="hidden"></div>`,
+                async f => {
+                    if (+f.price <= 0 || +f.cost_price < 0) return alert("Narxlarni to'g'ri kiriting");
+                    if (!selSizes.size) return alert("Kamida bitta o'lcham tanlang");
+                    const btn = $('modal-form').querySelector('[type=submit]');
+                    btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
+                    try {
+                        const urls = [];
+                        for (const it of imgs) {
+                            if (!it.blob) { urls.push(it.url); continue; }
+                            const path = crypto.randomUUID() + '.jpg';
+                            const { error: ue } = await sb.storage.from('product-images').upload(path, it.blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+                            if (ue) throw ue;
+                            urls.push(sb.storage.from('product-images').getPublicUrl(path).data.publicUrl);
+                        }
+                        const row = { name: f.name.trim(), category: f.category, price: +f.price, description: (f.description || '').trim() || null, images: urls, sizes: sortSizes(selSizes), seller_id: S ? mySid() : Number(f.seller_id) };
+                        let pid = editId;
+                        if (editId) { const { error } = await sb.from('products').update(row).eq('id', editId); if (error) throw error; }
+                        else { const { data: np, error } = await sb.from('products').insert(row).select('id').single(); if (error) throw error; pid = np.id; }
+                        const ce = (await sb.from('product_costs').upsert({ product_id: pid, cost_price: +f.cost_price })).error;
+                        if (ce) throw ce;
+                        if (editId) {
+                            const gone = ((products.find(x => x.id === editId) || {}).images || []).filter(u => !urls.includes(u));
+                            if (gone.length) await sb.storage.from('product-images').remove(gone.map(u => decodeURIComponent(u.split('/').pop())));
+                        }
+                        closeModal(); loadAll();
+                    } catch (err) { alert('Xatolik: ' + err.message); }
+                    btn.disabled = false; btn.textContent = 'Saqlash';
+                });
+            sizeChips(); drawPrev();
             $('img-input').onchange = async e => {
-                const files = [...e.target.files].slice(0, 4 - pending.length); e.target.value = '';
-                for (const f of files) { try { const blob = await shrink(f); pending.push({ blob, url: URL.createObjectURL(blob) }); } catch (_) { alert("Rasm o'qilmadi: " + f.name); } }
+                const files = [...e.target.files].slice(0, 4 - imgs.length); e.target.value = '';
+                for (const f of files) { try { const blob = await shrink(f); imgs.push({ blob, url: URL.createObjectURL(blob) }); } catch (_) { alert("Rasm o'qilmadi: " + f.name); } }
                 drawPrev();
             };
-            drawPrev();
         }
         function addLocation() {
             openModal("Yangi filial", inp('name', 'Filial nomi') + inp('address', 'Manzil') + inp('hours', 'Ish vaqti', 'text', '09:00 - 21:00'),
@@ -579,8 +754,8 @@
         const rank = (m, f) => Object.entries(m).map(([l, a]) => ({ l, v: f(a), n: a.length })).sort((x, y) => y.v - x.v);
         const profit = a => sum(a, o => Number(o.amount) - Number(o.cost || 0));
         const lines = list => list.flatMap(o => (o.items && o.items.length)
-            ? o.items.map(i => ({ name: i.name, cat: i.category || 'Boshqa', size: i.size, qty: i.qty, rev: i.price * i.qty, cost: (i.cost || 0) * i.qty }))
-            : [{ name: o.product, cat: catOf(o), size: o.size, qty: 1, rev: Number(o.amount), cost: Number(o.cost || 0) }]);
+            ? o.items.map(i => ({ o, name: i.name, cat: i.category || 'Boshqa', size: i.size, qty: i.qty, rev: i.price * i.qty, cost: (i.cost || 0) * i.qty, sid: i.seller_id || mainSeller().id }))
+            : [{ o, name: o.product, cat: catOf(o), size: o.size, qty: 1, rev: Number(o.amount), cost: Number(o.cost || 0), sid: ((products.find(p => p.name === o.product) || {}).seller_id) || mainSeller().id }]);
         const catOf = o => (products.find(p => p.name === o.product) || {}).category || 'Boshqa';
         const NONE = '<p class="text-xs text-gray-400">Ma\'lumot yo\'q</p>';
         const bars = (it, fmt = short) => { const m = Math.max(...it.map(i => i.v), 1); return it.map(i => `<div class="flex items-center gap-2 text-[11px]"><span class="w-20 truncate text-gray-500">${esc(i.l)}</span><div class="flex-1 h-2.5 bg-melissaBg rounded-full overflow-hidden"><div class="h-full rounded-full bg-melissaAccent" style="width:${i.v / m * 100}%"></div></div><span class="w-16 text-right font-semibold">${fmt(i.v)}</span></div>`).join('') || NONE; };
@@ -610,6 +785,9 @@
             const DN = lines(done), rev = sum(done), cst = sum(done, o => Number(o.cost || 0)), pf = rev - cst, margin = rev ? Math.round(pf / rev * 100) : 0;
             const pDetail = tbl(["Ko'rsatkich", 'Qiymat'], [['Tushum (chegirma hisobida)', money(rev)], ['Tannarx (kelish narxi)', money(cst)], ['Sof foyda', `<b class="text-green-600">${money(pf)}</b>`], ['Foyda marjasi', margin + '%']]) +
                 tbl(['Mahsulot', 'Sotilgan', 'Tushum', 'Tannarx', 'Foyda'], rank(group(DN, x => x.name), a => sum(a, x => x.rev - x.cost)).map(r => { const a = DN.filter(x => x.name === r.l); return [esc(r.l), sum(a, x => x.qty) + ' ta', money(sum(a, x => x.rev)), money(sum(a, x => x.cost)), money(r.v)]; }));
+            const SL = sellers.map(s => { const a = LN.filter(x => x.sid === s.id), r = sum(a, x => x.rev), c = sum(a, x => x.cost); return { l: s.name, v: r, cost: c, profit: r - c, qty: sum(a, x => x.qty), prods: products.filter(p => p.seller_id === s.id).length }; }).sort((a, b) => b.v - a.v);
+            const totRev = sum(SL, x => x.v) || 1;
+            const sTbl = tbl(['Sotuvchi', 'Mahsulot', 'Sotilgan', 'Tushum', 'Tannarx', 'Foyda', 'Ulushi'], SL.map(x => [esc(x.l), x.prods + ' ta', x.qty + ' ta', money(x.v), money(x.cost), money(x.profit), Math.round(x.v / totRev * 100) + '%']));
             const kpis = [
                 { id: 'k1', icon: 'fa-receipt', t: "O'rtacha chek", v: money(L.length ? Math.round(sum(L) / L.length) : 0), d: ord(L) },
                 { id: 'k2', icon: 'fa-circle-check', t: 'Bajarilish darajasi', v: pct(done.length, orders.length) + '%', d: ord(done) },
@@ -626,7 +804,10 @@
                 { id: 'c6', t: 'Haftaning kunlari', s: heat(wd), d: heat(wd) + tbl(['Kun', 'Buyurtma'], wd.map(x => [x.l, x.v])) },
                 { id: 'c7', t: "O'lchamlar taqsimoti", s: bars(sizes, String), d: bars(sizes, String) + tbl(['O\'lcham', 'Soni'], sizes.map(x => [esc(x.l), x.v])) },
                 { id: 'c8', t: 'Soatlar bo\'yicha faollik', s: line(hrs, 80) + `<p class="text-[11px] text-gray-400">Eng faol soat: ${peak}</p>`, d: line(hrs, 140) + tbl(['Soat', 'Buyurtma'], hrs.map((v, h) => [String(h).padStart(2, '0') + ':00', v]).filter(r => r[1])) },
-                { id: 'c9', t: 'Foyda tahlili', s: bars([{ l: 'Tushum', v: rev }, { l: 'Tannarx', v: cst }, { l: 'Sof foyda', v: pf }]) + `<p class="text-[11px] text-gray-400">Foyda marjasi: ${margin}%</p>`, d: pDetail }
+                { id: 'c9', t: 'Foyda tahlili', s: bars([{ l: 'Tushum', v: rev }, { l: 'Tannarx', v: cst }, { l: 'Sof foyda', v: pf }]) + `<p class="text-[11px] text-gray-400">Foyda marjasi: ${margin}%</p>`, d: pDetail },
+                { id: 'c10', t: "Sotuvchilar bo'yicha savdo", s: bars(SL.map(x => ({ l: x.l, v: x.v }))), d: bars(SL.map(x => ({ l: x.l, v: x.v }))) + sTbl },
+                { id: 'c11', t: 'Sotuvchilar foydasi', s: bars(SL.map(x => ({ l: x.l, v: x.profit }))), d: bars(SL.map(x => ({ l: x.l, v: x.profit }))) + sTbl },
+                { id: 'c12', t: 'Sotuvchilar: mahsulotlar soni', s: bars(SL.map(x => ({ l: x.l, v: x.prods })), String), d: bars(SL.map(x => ({ l: x.l, v: x.prods })), String) + sTbl }
             ];
             AN = {}; [...kpis, ...cards].forEach(x => AN[x.id] = x);
             $('an-kpis').innerHTML = kpis.map(k => `<button onclick="openDetail('${k.id}')" class="text-left bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2 hover:border-melissaDark hover:shadow-md transition"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-medium">${k.t}</span><i class="fa-solid ${k.icon} text-melissaAccent text-xs"></i></div><h3 class="font-bold text-xl">${k.v}</h3></button>`).join('');
@@ -676,14 +857,248 @@
         }
         function refreshViews() { renderDashboard(); renderDashExtra(); renderOrders(); renderAnalytics(); }
 
+        // ---------- EXCEL ----------
+        function exportOrders(kind) {
+            $('xl-menu').classList.add('hidden');
+            if (typeof XLSX === 'undefined') return alert("Excel kutubxonasi yuklanmadi. Internetni tekshirib, sahifani yangilang.");
+            const t = new Date(), d = n => { const x = new Date(); x.setDate(x.getDate() - n); return dkey(x); };
+            const R = { today: [d(0), d(0), 'kunlik'], week: [d(6), d(0), 'haftalik'], month: [dkey(new Date(t.getFullYear(), t.getMonth(), 1)), d(0), 'oylik'] };
+            let list, tag, label;
+            if (kind === 'filter') { list = filtered(); tag = 'filtr'; label = 'Filtr natijasi'; }
+            else { const [a, b, g] = R[kind]; list = filtered(orders, { ...OF, q: '', status: '', pay: '', seller: '', from: a, to: b, sort: 'old' }); tag = g; label = `${a} — ${b}`; }
+            if (!list.length) return alert("Tanlangan davrda buyurtma yo'q");
+            const ord = list.map(o => ({
+                'ID': 'MEL-' + o.id, 'Sana': dkey(o.created_at), 'Vaqt': new Date(o.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                'Mijoz': o.customer, 'Telefon': o.phone || '', 'Telegram': o.tg_username ? '@' + o.tg_username : '', 'Manzil': o.address || '',
+                "To'lov": o.payment || '', 'Holat': o.status, 'Mahsulotlar': o.product, 'Sotuvchi': oSellers(o).join(', '),
+                'Promokod': o.promo_code || '', 'Promo chegirma': Number(o.discount || 0), 'Summa': Number(o.amount), 'Tannarx': Number(o.cost || 0), 'Sof foyda': Number(o.amount) - Number(o.cost || 0)
+            }));
+            const lns = lines(list).map(x => ({
+                'Buyurtma': 'MEL-' + x.o.id, 'Sana': dkey(x.o.created_at), 'Holat': x.o.status, 'Mahsulot': x.name, 'Kategoriya': x.cat, 'Sotuvchi': sName(x.sid),
+                "O'lcham": x.size || '', 'Soni': x.qty, 'Tushum': x.rev, 'Tannarx': x.cost, 'Foyda': x.rev - x.cost
+            }));
+            const ok = list.filter(o => o.status !== 'Bekor qilindi'), rev = sum(ok), cst = sum(ok, o => Number(o.cost || 0));
+            const summ = [['Melissa — buyurtmalar hisoboti'], ['Davr', label], ['Yuklab olingan', fdate(new Date())], [],
+                ["Ko'rsatkich", 'Qiymat'], ['Buyurtmalar soni', list.length], ['Bekor qilinmaganlar', ok.length], ['Tushum (bekor qilinmaganlar)', rev], ['Tannarx', cst], ['Sof foyda', rev - cst], [],
+                ['Holat', 'Soni', 'Summa'], ...STATUSES.map(s => [s, list.filter(o => o.status === s).length, sum(list.filter(o => o.status === s))]), [],
+                ['Sotuvchi', 'Tushum', 'Foyda'], ...sellers.map(s => { const a = lines(ok).filter(x => x.sid === s.id); return [s.name, sum(a, x => x.rev), sum(a, x => x.rev - x.cost)]; })];
+            const wb = XLSX.utils.book_new();
+            const add = (ws, name, w) => { ws['!cols'] = w.map(x => ({ wch: x })); XLSX.utils.book_append_sheet(wb, ws, name); };
+            add(XLSX.utils.aoa_to_sheet(summ), 'Xulosa', [32, 24, 18]);
+            add(XLSX.utils.json_to_sheet(ord), 'Buyurtmalar', [11, 12, 7, 20, 17, 14, 34, 18, 14, 40, 18, 12, 14, 14, 14, 14]);
+            add(XLSX.utils.json_to_sheet(lns), 'Mahsulotlar', [11, 12, 14, 28, 16, 18, 9, 7, 14, 14, 14]);
+            XLSX.writeFile(wb, `melissa-buyurtmalar-${tag}-${dkey(new Date())}.xlsx`);
+        }
+
         // ---------- BUYURTMA TAFSILOTI ----------
         function openOrder(id) {
             const o = orders.find(x => x.id === id); if (!o) return;
+            const S = isSeller(), its = oItems(o);
+            const flow = ['Kutilmoqda', 'Yetkazilmoqda', 'Bajarildi'], ix = flow.indexOf(o.status);
+            const step = (s, i) => `<div class="text-center"><div class="mx-auto w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${ix >= i ? 'bg-melissaDark text-white' : 'bg-melissaBg text-gray-400 border border-melissaPeach'}">${ix > i ? '<i class="fa-solid fa-check"></i>' : i + 1}</div><p class="text-[10px] mt-1 ${ix >= i ? 'font-semibold' : 'text-gray-400'}">${s}</p></div>`;
             const f = (l, v) => `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">${l}</p><p class="text-sm font-semibold break-words">${v || '—'}</p></div>`;
+            const sub = its.reduce((s, i) => s + i.price * i.qty, 0);
             $('detail-title').textContent = 'Buyurtma #MEL-' + o.id;
-            $('detail-body').innerHTML = `<div class="grid grid-cols-2 gap-3">${f('Mijoz', esc(o.customer))}${f('Telefon', esc(o.phone))}${f('Mahsulot', esc(o.product))}${f("O'lcham", esc(o.size))}${f('Summa', money(o.amount))}${f('Sana', new Date(o.created_at).toLocaleString('en-GB'))}</div>${(o.items && o.items.length) ? `<div class="bg-melissaBg rounded-xl p-3 space-y-1.5">${o.items.map(i => `<div class="flex justify-between gap-2 text-xs"><span>${esc(i.name)} (${esc(i.size)}) × ${i.qty}</span><b class="shrink-0">${money(i.price * i.qty)}</b></div>`).join('')}</div>` : ''}<div class="grid grid-cols-2 gap-3">${f('Chegirma', money(o.discount))}${f("To'lov", esc(o.payment))}${f('Telegram', o.tg_username ? '@' + esc(o.tg_username) : '')}${f('Sof foyda', money(Number(o.amount) - Number(o.cost || 0)))}</div>${f('Manzil', esc(o.address))}${f('Izoh', esc(o.note))}<div><p class="text-[10px] text-gray-400 uppercase mb-1">Holatni o'zgartirish</p><select onchange="setStatus(${o.id}, this.value)" class="bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none">${STATUSES.map(s => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
+            $('detail-body').innerHTML = `
+                <div class="flex items-center justify-between gap-2 flex-wrap"><span class="${STATUS_CLS[o.status]} px-3 py-1 rounded-full text-xs font-semibold">${o.status}</span><span class="text-xs text-gray-400">${fdate(o.created_at)}</span></div>
+                ${o.status === 'Bekor qilindi' ? '<p class="text-xs text-red-500">Buyurtma bekor qilingan</p>' : `<div class="flex items-start justify-between">${flow.map((s, i) => step(s, i)).join('<div class="flex-1 h-px bg-melissaPeach mt-3.5 mx-2"></div>')}</div>`}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${f('Mijoz', esc(o.customer))}${f('Telefon', o.phone ? `<a href="tel:${esc(o.phone.replace(/[^+\d]/g, ''))}" class="text-melissaAccent">${esc(o.phone)}</a>` : '')}${f('Telegram', o.tg_username ? `<a href="https://t.me/${esc(o.tg_username)}" target="_blank" rel="noopener" class="text-melissaAccent">@${esc(o.tg_username)}</a>` : '')}${f("To'lov turi", esc(o.payment))}</div>
+                ${f('Yetkazib berish nuqtasi', esc(o.address))}
+                <div class="border border-melissaPeach/60 rounded-2xl divide-y divide-gray-100 overflow-hidden">${its.map(i => `<div class="flex items-center gap-3 p-3"><div class="w-12 h-12 rounded-xl bg-melissaBg overflow-hidden shrink-0 flex items-center justify-center text-gray-300">${i.img ? `<img src="${esc(i.img)}" class="w-full h-full object-cover">` : '<i class="fa-regular fa-image"></i>'}</div><div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(i.name)}</p><p class="text-[11px] text-gray-400">O'lcham: ${esc(i.size || '—')} · ${i.qty} ta · ${esc(sName(i.seller_id))}${i.discount_percent ? ` · <span class="text-red-500 font-semibold">-${i.discount_percent}%</span>` : ''}</p></div><b class="text-xs shrink-0">${money(i.price * i.qty)}</b></div>`).join('')}</div>
+                <div class="bg-melissaBg rounded-2xl p-4 space-y-1.5 text-xs">
+                    <div class="flex justify-between"><span class="text-gray-500">Mahsulotlar</span><span>${money(sub)}</span></div>
+                    ${Number(o.discount) ? `<div class="flex justify-between"><span class="text-gray-500">Promokod ${esc(o.promo_code || '')}</span><span class="text-green-600">− ${money(o.discount)}</span></div>` : ''}
+                    <div class="flex justify-between font-bold text-sm pt-1.5 border-t border-melissaPeach/60"><span>Jami</span><span>${money(o.amount)}</span></div>
+                    ${S ? '' : `<div class="flex justify-between"><span class="text-gray-500">Tannarx</span><span>${money(o.cost)}</span></div><div class="flex justify-between"><span class="text-gray-500">Sof foyda</span><b class="text-green-600">${money(Number(o.amount) - Number(o.cost || 0))}</b></div>`}
+                </div>
+                ${o.note ? f('Izoh', esc(o.note)) : ''}
+                ${S ? '' : `<div class="flex flex-wrap gap-2">${ix > -1 && ix < 2 ? `<button onclick="setStatus(${o.id}, '${flow[ix + 1]}')" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-black transition">Keyingi: ${flow[ix + 1]}</button>` : ''}${o.status !== 'Bajarildi' && o.status !== 'Bekor qilindi' ? `<button onclick="if(confirm('Buyurtma bekor qilinsinmi?'))setStatus(${o.id}, 'Bekor qilindi')" class="bg-red-50 text-red-500 border border-red-100 text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-red-100 transition">Bekor qilish</button>` : ''}</div>`}`;
             $('detail').classList.remove('hidden');
         }
+
+        // ---------- SOTUVCHILAR ----------
+        function renderSellers() {
+            const LN = lines(orders.filter(o => o.status !== 'Bekor qilindi'));
+            $('sellers-grid').innerHTML = sellers.map(s => {
+                const a = LN.filter(x => x.sid === s.id), n = products.filter(p => p.seller_id === s.id).length;
+                return `<div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 shrink-0 rounded-full border border-melissaDark flex items-center justify-center bg-melissaBg"><i class="fa-solid fa-store text-sm"></i></div>
+                        <div class="min-w-0"><h4 class="font-serif font-bold text-base truncate">${esc(s.name)}</h4><p class="text-[11px] text-gray-400 truncate">${s.is_main ? "Asosiy do'kon" : 'Login: ' + esc(s.login || '—')}</p></div></div>
+                        <span class="shrink-0 ${s.active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'} text-[10px] font-bold px-2 py-0.5 rounded-full">${s.active ? 'Faol' : 'Bloklangan'}</span>
+                    </div>
+                    ${s.phone ? `<p class="text-xs text-gray-500"><i class="fa-solid fa-phone mr-1.5"></i>${esc(s.phone)}</p>` : ''}
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-melissaBg rounded-xl py-2"><p class="font-bold text-sm">${n}</p><p class="text-[10px] text-gray-400">Mahsulot</p></div>
+                        <div class="bg-melissaBg rounded-xl py-2"><p class="font-bold text-sm">${sum(a, x => x.qty)}</p><p class="text-[10px] text-gray-400">Sotilgan</p></div>
+                        <div class="bg-melissaBg rounded-xl py-2"><p class="font-bold text-sm">${short(sum(a, x => x.rev))}</p><p class="text-[10px] text-gray-400">Tushum</p></div>
+                    </div>
+                    <div class="flex gap-2"><button onclick="editSeller(${s.id})" class="flex-1 text-xs font-semibold py-2 rounded-xl bg-melissaBg border border-melissaPeach hover:bg-melissaPeach/40 transition"><i class="fa-solid fa-pen mr-1.5"></i>Tahrirlash</button>${s.is_main ? '' : `<button onclick="delSeller(${s.id})" class="px-3 text-xs rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 transition" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button>`}</div>
+                </div>`;
+            }).join('');
+        }
+        function addSeller() {
+            openModal('Yangi sotuvchi', inp('name', "Sotuvchi / do'kon nomi") + inp('phone', 'Telefon', 'tel', '+998 90 123 45 67') + inp('login', 'Login (saytga kirish uchun)', 'text', 'masalan: dilnoza') + inp('password', 'Parol', 'text', 'kamida 6 ta belgi'),
+                async f => {
+                    const b = $('modal-form').querySelector('[type=submit]'); b.disabled = true;
+                    try { await apiCall('/api/sellers', 'POST', f); closeModal(); loadAll(); } catch (e) { alert('Xatolik: ' + e.message); }
+                    b.disabled = false;
+                });
+        }
+        function editSeller(id) {
+            const s = sellers.find(x => x.id === id);
+            openModal('Sotuvchini tahrirlash', inp('name', "Sotuvchi / do'kon nomi", 'text', '', s.name) + inp('phone', 'Telefon', 'tel', '', s.phone || '') +
+                (s.is_main ? '' : inp('new_password', "Yangi parol (o'zgartirmasangiz bo'sh qoldiring)", 'text') + selF('active', 'Holati', [{ v: 'true', l: 'Faol' }, { v: 'false', l: 'Bloklangan (kira olmaydi)' }], String(s.active))),
+                async f => {
+                    const b = $('modal-form').querySelector('[type=submit]'); b.disabled = true;
+                    try { await apiCall('/api/sellers', 'PUT', { id, name: f.name, phone: f.phone, new_password: f.new_password || undefined, active: s.is_main ? undefined : f.active === 'true' }); closeModal(); loadAll(); }
+                    catch (e) { alert('Xatolik: ' + e.message); }
+                    b.disabled = false;
+                });
+        }
+        async function delSeller(id) {
+            if (!confirm("Sotuvchi va uning kirish huquqi o'chirilsinmi?")) return;
+            try { await apiCall('/api/sellers', 'DELETE', { id }); loadAll(); } catch (e) { alert('Xatolik: ' + e.message); }
+        }
+
+        // ---------- CHEGIRMALAR ----------
+        let dtab = 'poster', bn = null, pickPct = 10, dSel = new Set(), dq = '';
+        const BN_DEF = { badge: 'Yangi Kolleksiya', title: 'Bahoriy Nafislik', subtitle: "Savatda promo-kod bilan chegirmaga ega bo'ling.", button_text: 'Xarid qilish', bg_from: '#2C2C2C', bg_to: '#2C2C2C', text_color: '#FFFFFF', badge_color: '#D4A373', image_product_id: null, product_ids: [] };
+        const PRESETS = [
+            { n: 'Qora nafislik', a: '#2C2C2C', b: '#4A3B33', t: '#FFFFFF', c: '#D4A373' }, { n: 'Shaftoli', a: '#F6D8CE', b: '#EBB9A5', t: '#2C2C2C', c: '#2C2C2C' },
+            { n: 'Oltin kech', a: '#3B2A20', b: '#8C6A43', t: '#FFFFFF', c: '#D4A373' }, { n: 'Atirgul', a: '#C9728A', b: '#7A3350', t: '#FFFFFF', c: '#F6D8CE' },
+            { n: 'Zaytun', a: '#556B4E', b: '#2F3F2C', t: '#FFFFFF', c: '#D4A373' }, { n: 'Krem va oltin', a: '#FDF6F0', b: '#EBD5B7', t: '#2C2C2C', c: '#C5A059' },
+            { n: 'Kechki ko\'k', a: '#2E3A59', b: '#161C2E', t: '#FFFFFF', c: '#F6D8CE' }, { n: 'Mercan', a: '#E98A73', b: '#C4553F', t: '#FFFFFF', c: '#2C2C2C' }
+        ];
+        const ink = h => { const n = parseInt(String(h).replace('#', ''), 16) || 0; return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? '#2C2C2C' : '#FFFFFF'; };
+        function initDiscounts() { bn = { ...BN_DEF, ...(banner || {}) }; bn.product_ids = [...((banner && banner.product_ids) || [])]; renderDiscounts(); }
+        function discTab(k) { dtab = k; dq = ''; renderDiscounts(); }
+        function renderDiscounts() {
+            $('disc-tabs').innerHTML = [['poster', 'fa-image', 'Reklama poster', 'Asosiy sahifadagi banner'], ['percent', 'fa-percent', 'Foizli chegirmalar', 'Tanlangan mahsulotlarga'], ['promo', 'fa-ticket', 'Promokodlar', 'Savatda kiritiladigan kodlar']]
+                .map(([k, ic, t, d]) => `<button onclick="discTab('${k}')" class="text-left p-4 rounded-2xl border shadow-sm transition ${dtab === k ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach/60 hover:border-melissaDark'}"><i class="fa-solid ${ic} mb-2 text-melissaAccent"></i><p class="font-serif font-bold text-sm">${t}</p><p class="text-[11px] ${dtab === k ? 'text-gray-300' : 'text-gray-400'}">${d}</p></button>`).join('');
+            ({ poster: panelPoster, percent: panelPercent, promo: panelPromo })[dtab]();
+        }
+        const dFilter = () => products.filter(p => !dq || p.name.toLowerCase().includes(dq.toLowerCase()));
+        const thumb = p => `<div class="w-11 h-11 rounded-lg bg-melissaBg overflow-hidden shrink-0">${(p.images || [])[0] ? `<img src="${esc(p.images[0])}" class="w-full h-full object-cover">` : ''}</div>`;
+        const discBadge = p => p.discount_percent ? ` · <span class="text-red-500 font-semibold">-${p.discount_percent}%</span>` : '';
+
+        // a) Reklama poster
+        function bannerPreview() {
+            const p = products.find(x => x.id === bn.image_product_id), im = p && (p.images || [])[0];
+            return `<div class="relative rounded-2xl overflow-hidden p-6 shadow-lg" style="background:linear-gradient(135deg,${esc(bn.bg_from)},${esc(bn.bg_to)});color:${esc(bn.text_color)}">
+                <div class="relative z-10 max-w-[200px]">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider" style="background:${esc(bn.badge_color)};color:${ink(bn.badge_color)}">${esc(bn.badge)}</span>
+                    <h2 class="font-serif text-2xl font-bold mt-2 leading-tight">${esc(bn.title)}</h2>
+                    <p class="text-xs mt-1 opacity-80">${esc(bn.subtitle)}</p>
+                    <span class="inline-block mt-4 text-xs font-semibold px-4 py-2 rounded-full shadow" style="background:${esc(bn.text_color)};color:${esc(bn.bg_from)}">${esc(bn.button_text)}</span>
+                </div>
+                <div class="absolute right-0 bottom-0 top-0 w-1/2 opacity-70 bg-cover bg-center flex items-center justify-center" style="${im ? `background-image:url('${esc(im).replace(/'/g, '%27')}')` : ''}">${im ? '' : '<i class="fa-solid fa-feather text-7xl opacity-20 -rotate-12"></i>'}</div></div>`;
+        }
+        function panelPoster() {
+            $('disc-panel').innerHTML = `
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                    <h4 class="font-serif font-bold text-base">Poster matni va ranglari</h4>
+                    ${[['badge', 'Yorliq'], ['title', 'Sarlavha'], ['subtitle', 'Tavsif'], ['button_text', 'Tugma matni']].map(([k, l]) => `<div><label class="block text-xs font-semibold text-gray-700 mb-1">${l}</label><input value="${esc(bn[k])}" oninput="bnSet('${k}', this.value)" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>`).join('')}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${[['bg_from', 'Fon (chap)'], ['bg_to', "Fon (o'ng)"], ['text_color', 'Matn rangi'], ['badge_color', 'Yorliq rangi']].map(([k, l]) => `<div><label class="block text-[11px] font-semibold text-gray-700 mb-1">${l}</label><input type="color" id="bn-${k}" value="${esc(bn[k])}" oninput="bnSet('${k}', this.value)" class="w-full h-10 rounded-xl border border-melissaPeach bg-white cursor-pointer p-1"></div>`).join('')}</div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2"><p class="text-xs font-semibold text-gray-700">Tayyor ranglar</p><button onclick="suggestBanner()" class="text-xs font-semibold text-melissaDark bg-melissaPeach px-3 py-1.5 rounded-full hover:bg-melissaAccent hover:text-white transition"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Taklif qilish</button></div>
+                        <div class="grid grid-cols-4 gap-2">${PRESETS.map((p, i) => `<button onclick="applyPreset(${i})" title="${esc(p.n)}" class="h-12 rounded-xl border border-melissaPeach/60 shadow-sm text-[9px] font-semibold flex items-end justify-center pb-1 hover:scale-105 transition" style="background:linear-gradient(135deg,${p.a},${p.b});color:${p.t}">${esc(p.n)}</button>`).join('')}</div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                    <h4 class="font-serif font-bold text-base">Mini appdagi ko'rinishi</h4>
+                    <div class="max-w-sm" id="bn-preview"></div>
+                    <p class="text-[11px] text-gray-400 leading-relaxed">O'ng tomondagi rasm "Rasm" tanlangan mahsulotdan olinadi. "${esc(bn.button_text)}" bosilganda "Ro'yxat"da belgilangan mahsulotlar ochiladi (hech biri belgilanmasa, hamma mahsulotlar).</p>
+                    <button onclick="saveBanner()" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow hover:bg-black transition">Posterni saqlash</button>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2"><h4 class="font-serif font-bold text-base">Mahsulotlar</h4><input value="${esc(dq)}" oninput="dq=this.value;bnList()" placeholder="Qidirish..." class="bg-melissaBg border border-melissaPeach text-xs px-3 py-2 rounded-xl focus:outline-none w-48"></div>
+                <div id="bn-list" class="divide-y divide-gray-100"></div>
+            </div>`;
+            bnPreview(); bnList();
+        }
+        function bnList() {
+            $('bn-list').innerHTML = dFilter().map(p => `<div class="flex items-center gap-3 py-2.5">${thumb(p)}
+                <div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(p.name)}</p><p class="text-[11px] text-gray-400">${money(p.price)}${discBadge(p)}</p></div>
+                <label class="flex items-center gap-1.5 text-[11px] cursor-pointer"><input type="radio" name="bn-img" ${bn.image_product_id === p.id ? 'checked' : ''} onchange="bnImg(${p.id})">Rasm</label>
+                <label class="flex items-center gap-1.5 text-[11px] cursor-pointer"><input type="checkbox" ${bn.product_ids.includes(p.id) ? 'checked' : ''} onchange="bnTog(${p.id})">Ro'yxat</label></div>`).join('') || '<p class="text-xs text-gray-400 py-4">Mahsulotlar topilmadi</p>';
+        }
+        const bnPreview = () => { if ($('bn-preview')) $('bn-preview').innerHTML = bannerPreview(); };
+        function bnSet(k, v) { bn[k] = v; bnPreview(); }
+        function bnImg(id) { bn.image_product_id = id; bnPreview(); }
+        function bnTog(id) { const i = bn.product_ids.indexOf(id); i > -1 ? bn.product_ids.splice(i, 1) : bn.product_ids.push(id); }
+        function applyPreset(i) {
+            const p = PRESETS[i]; Object.assign(bn, { bg_from: p.a, bg_to: p.b, text_color: p.t, badge_color: p.c });
+            ['bg_from', 'bg_to', 'text_color', 'badge_color'].forEach(k => { if ($('bn-' + k)) $('bn-' + k).value = bn[k]; });
+            bnPreview();
+        }
+        function suggestBanner() { const cur = PRESETS.findIndex(p => p.a === bn.bg_from && p.b === bn.bg_to); let i; do { i = Math.floor(Math.random() * PRESETS.length); } while (i === cur); applyPreset(i); }
+        async function saveBanner() {
+            const row = { id: 1, badge: bn.badge, title: bn.title, subtitle: bn.subtitle, button_text: bn.button_text, bg_from: bn.bg_from, bg_to: bn.bg_to, text_color: bn.text_color, badge_color: bn.badge_color, image_product_id: bn.image_product_id, product_ids: bn.product_ids, updated_at: new Date().toISOString() };
+            const { error } = await sb.from('banner_settings').upsert(row);
+            if (!fail(error)) { banner = row; alert('Poster saqlandi. Mini appda yangilanadi.'); }
+        }
+
+        // b) Foizli chegirmalar
+        function panelPercent() {
+            $('disc-panel').innerHTML = `
+            <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                <h4 class="font-serif font-bold text-base">1. Chegirma foizini tanlang</h4>
+                <div class="flex flex-wrap items-center gap-2">${[5, 10, 15, 20, 25, 30, 40, 50].map(n => `<button onclick="setPct(${n})" class="px-4 py-2 rounded-full border text-xs font-semibold transition ${pickPct === n ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach'}">${n}%</button>`).join('')}
+                    <div class="flex items-center gap-1"><input type="number" min="1" max="90" value="${pickPct}" oninput="setPct(+this.value, 1)" class="w-20 bg-melissaBg border border-melissaPeach text-xs px-3 py-2 rounded-xl focus:outline-none"><span class="text-xs text-gray-500">%</span></div></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2"><h4 class="font-serif font-bold text-base">2. Mahsulotlarni tanlang <span id="pd-count" class="text-xs text-gray-400 font-normal"></span></h4>
+                    <div class="flex gap-2"><input value="${esc(dq)}" oninput="dq=this.value;pdList()" placeholder="Qidirish..." class="bg-melissaBg border border-melissaPeach text-xs px-3 py-2 rounded-xl focus:outline-none w-40"><button onclick="selAllPD()" class="text-xs font-semibold bg-melissaBg border border-melissaPeach px-3 py-2 rounded-xl hover:bg-melissaPeach/40">Hammasini belgilash</button></div></div>
+                <div id="pd-list" class="divide-y divide-gray-100"></div>
+                <div class="flex flex-wrap gap-2 pt-2"><button onclick="applyPct(true)" class="bg-melissaDark text-white text-xs font-semibold px-5 py-3 rounded-xl shadow hover:bg-black transition">Chegirmani qo'llash</button><button onclick="applyPct(false)" class="bg-red-50 text-red-500 border border-red-100 text-xs font-semibold px-5 py-3 rounded-xl hover:bg-red-100 transition">Belgilanganlardan chegirmani olib tashlash</button></div>
+            </div>`;
+            pdList();
+        }
+        function setPct(n, soft) { pickPct = Math.min(90, Math.max(1, Math.round(n) || 1)); soft ? pdList() : panelPercent(); }
+        function pdList() {
+            $('pd-list').innerHTML = dFilter().map(p => { const on = dSel.has(p.id); return `<label class="flex items-center gap-3 py-2.5 cursor-pointer"><input type="checkbox" ${on ? 'checked' : ''} onchange="togPD(${p.id})">${thumb(p)}
+                <div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">${esc(p.name)}</p><p class="text-[11px] text-gray-400">${esc(sName(p.seller_id))} · ${money(p.price)}</p></div>
+                <div class="text-right text-[11px] shrink-0">${p.discount_percent ? `<span class="bg-red-50 text-red-500 font-bold px-2 py-0.5 rounded-full">-${p.discount_percent}%</span>` : '<span class="text-gray-300">chegirmasiz</span>'}${on ? `<p class="text-green-600 font-semibold mt-1">${money(Math.round(p.price * (100 - pickPct) / 100))}</p>` : ''}</div></label>`; }).join('') || '<p class="text-xs text-gray-400 py-4">Mahsulotlar topilmadi</p>';
+            $('pd-count').textContent = `(${dSel.size} ta tanlandi)`;
+        }
+        function togPD(id) { dSel.has(id) ? dSel.delete(id) : dSel.add(id); pdList(); }
+        function selAllPD() { const pl = dFilter(), all = pl.every(p => dSel.has(p.id)); pl.forEach(p => all ? dSel.delete(p.id) : dSel.add(p.id)); pdList(); }
+        async function applyPct(on) {
+            if (!dSel.size) return alert('Avval mahsulotlarni belgilang');
+            const v = on ? pickPct : 0;
+            const { error } = await sb.from('products').update({ discount_percent: v }).in('id', [...dSel]);
+            if (fail(error)) return;
+            products.forEach(p => { if (dSel.has(p.id)) p.discount_percent = v; });
+            const n = dSel.size; dSel.clear(); renderProducts(); pdList();
+            alert(on ? `${n} ta mahsulotga ${v}% chegirma qo'llandi` : `${n} ta mahsulotdan chegirma olib tashlandi`);
+        }
+
+        // c) Promokodlar
+        function panelPromo() {
+            const uses = c => orders.filter(o => o.promo_code === c && o.status !== 'Bekor qilindi').length;
+            $('disc-panel').innerHTML = `
+            <div class="flex justify-between items-center flex-wrap gap-2"><p class="text-xs text-gray-500">Mijoz savatda promokodni kiritganda umumiy summadan chegirma beriladi.</p><button onclick="addPromo()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Promokod yaratish</button></div>
+            <div class="bg-white rounded-2xl border border-melissaPeach/60 overflow-x-auto shadow-sm"><table class="w-full text-left text-xs">
+                <thead class="bg-melissaBg border-b border-melissaPeach/60 text-gray-500 uppercase"><tr><th class="p-4">Promokod</th><th class="p-4">Chegirma</th><th class="p-4">Ishlatilgan</th><th class="p-4">Holati</th><th class="p-4"></th></tr></thead>
+                <tbody class="divide-y divide-gray-100">${promos.map(c => `<tr><td class="p-4 font-bold tracking-wider">${esc(c.code)}</td><td class="p-4"><span class="bg-red-50 text-red-500 font-bold px-2.5 py-1 rounded-full">${c.percent}%</span></td><td class="p-4">${uses(c.code)} marta</td>
+                    <td class="p-4"><button onclick="togPromo(${c.id}, ${!c.active})" class="${c.active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'} px-2.5 py-1 rounded-full font-semibold">${c.active ? 'Faol' : "O'chirilgan"}</button></td>
+                    <td class="p-4 text-right"><button onclick="delPromo(${c.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button></td></tr>`).join('') || '<tr><td colspan="5" class="p-8 text-center text-gray-400">Promokodlar yo\'q</td></tr>'}</tbody></table></div>`;
+        }
+        function addPromo() {
+            openModal('Yangi promokod', inp('code', 'Promokod', 'text', 'MELISSA10') + inp('percent', 'Necha foizlik chegirma (%)', 'number', '10'), async f => {
+                const code = f.code.trim().toUpperCase().replace(/\s+/g, ''), percent = Math.round(+f.percent);
+                if (!/^[A-Z0-9_-]{3,20}$/.test(code)) return alert('Promokod: 3-20 belgi, faqat lotin harflari, raqam, _ va -');
+                if (!(percent >= 1 && percent <= 90)) return alert("Chegirma 1% dan 90% gacha bo'lsin");
+                const { error } = await sb.from('promo_codes').insert({ code, percent });
+                if (error && error.code === '23505') return alert('Bunday promokod allaqachon bor');
+                if (!fail(error)) { closeModal(); loadAll(); }
+            });
+        }
+        async function togPromo(id, active) { const { error } = await sb.from('promo_codes').update({ active }).eq('id', id); if (!fail(error)) { promos.find(x => x.id === id).active = active; panelPromo(); } }
+        async function delPromo(id) { if (!confirm("Promokod o'chirilsinmi?")) return; const { error } = await sb.from('promo_codes').delete().eq('id', id); if (!fail(error)) { promos = promos.filter(x => x.id !== id); panelPromo(); } }
     </script>
 </body>
 </html>

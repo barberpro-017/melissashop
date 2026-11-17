@@ -9,8 +9,16 @@ const rest = (path, opts = {}) =>
 
 const body = req => (typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}));
 
+// Saytga login qilgan foydalanuvchi (Supabase JWT orqali)
+async function authUser(req) {
+  const t = (req.headers.authorization || '').replace('Bearer ', '');
+  if (!t) return null;
+  const r = await fetch(SB + '/auth/v1/user', { headers: { apikey: KEY, Authorization: 'Bearer ' + t } });
+  return r.ok ? r.json() : null;
+}
+const roleOf = u => (u && u.app_metadata && u.app_metadata.role) || 'admin';
+
 // Telegram Mini App initData imzosini tekshiradi.
-// Saqlangan bot tokenlarining qaysi biri bilan imzo mos kelsa, o'sha bot orqali kirilgan hisoblanadi.
 async function verifyInitData(initData) {
   if (!initData || typeof initData !== 'string') return null;
   const params = new URLSearchParams(initData);
@@ -36,4 +44,4 @@ async function verifyInitData(initData) {
   return null;
 }
 
-module.exports = { SB, KEY, rest, body, verifyInitData };
+module.exports = { SB, KEY, H, rest, body, authUser, roleOf, verifyInitData };

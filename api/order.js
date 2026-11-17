@@ -1,7 +1,6 @@
 const { SB, KEY, rest, body, verifyInitData } = require('./_lib');
 
-const PROMOS = { MELISSA10: 10 }; // promo-kod: foiz chegirma (mini appdagi bilan bir xil)
-const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+const DEF_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 const money = n => Number(n).toLocaleString('en-US') + " so'm";
 
 module.exports = async (req, res) => {
@@ -15,35 +14,53 @@ module.exports = async (req, res) => {
 
     const name = String(b.name || '').trim().slice(0, 80);
     const phone = String(b.phone || '').trim().slice(0, 30);
-    const address = String(b.address || '').trim().slice(0, 250);
     const payment = String(b.payment || '').trim().slice(0, 60);
-    if (!name || phone.replace(/\D/g, '').length < 9 || address.length < 5)
-      return res.status(400).json({ error: "Ism, telefon va manzilni to'liq kiriting" });
+    if (!name || phone.replace(/\D/g, '').length < 9)
+      return res.status(400).json({ error: "Ism va telefon raqamni to'liq kiriting (Profil → Mening profilim)" });
+
+    // Yetkazib berish nuqtasi faqat admin kiritgan ro'yxatdan
+    const lid = Number(b.location_id);
+    const lr = Number.isInteger(lid) ? await rest(`locations?id=eq.${lid}&select=id,name,address`) : null;
+    const loc = lr && lr.ok ? (await lr.json())[0] : null;
+    if (!loc) return res.status(400).json({ error: 'Yetkazib berish nuqtasini tanlang' });
 
     const reqItems = Array.isArray(b.items) ? b.items.slice(0, 30) : [];
     const ids = [...new Set(reqItems.map(i => Number(i.id)).filter(Number.isInteger))];
     if (!reqItems.length || !ids.length) return res.status(400).json({ error: "Savat bo'sh" });
 
-    // Narx va tannarx faqat serverda, bazadan olinadi (mijoz yuborgan narxga ishonilmaydi)
+    // Narx, chegirma va tannarx faqat serverda, bazadan olinadi
     const [pr, cr] = await Promise.all([
-      rest(`products?id=in.(${ids.join(',')})&select=id,name,category,price`),
+      rest(`products?id=in.(${ids.join(',')})&select=id,name,category,price,discount_percent,sizes,seller_id,images`),
       rest(`product_costs?product_id=in.(${ids.join(',')})&select=product_id,cost_price`)
     ]);
     if (!pr.ok) return res.status(500).json({ error: "Mahsulotlarni o'qib bo'lmadi" });
     const prod = new Map((await pr.json()).map(p => [p.id, p]));
-    const cost = new Map(((cr.ok ? await cr.json() : [])).map(c => [c.product_id, Number(c.cost_price)]));
+    const cost = new Map((cr.ok ? await cr.json() : []).map(c => [c.product_id, Number(c.cost_price)]));
 
     const items = [];
     for (const i of reqItems) {
       const p = prod.get(Number(i.id));
       const qty = Number(i.qty);
-      if (!p || !SIZES.includes(i.size) || !Number.isInteger(qty) || qty < 1 || qty > 20)
-        return res.status(400).json({ error: "Savatdagi mahsulot topilmadi. Savatni yangilang" });
-      items.push({ id: p.id, name: p.name, category: p.category, size: i.size, qty, price: Number(p.price), cost: cost.get(p.id) || 0 });
+      const allowed = p && p.sizes && p.sizes.length ? p.sizes : DEF_SIZES;
+      if (!p || !allowed.includes(String(i.size)) || !Number.isInteger(qty) || qty < 1 || qty > 20)
+        return res.status(400).json({ error: "Savatdagi mahsulot yoki o'lcham topilmadi. Savatni yangilang" });
+      const list = Number(p.price), pct = Number(p.discount_percent) || 0;
+      items.push({
+        id: p.id, name: p.name, category: p.category, size: String(i.size), qty,
+        price: Math.round(list * (100 - pct) / 100), list_price: list, discount_percent: pct,
+        cost: cost.get(p.id) || 0, seller_id: p.seller_id, img: (p.images || [])[0] || null
+      });
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    const pct = PROMOS[String(b.promo || '').trim().toUpperCase()] || 0;
+    let pct = 0, promoCode = null;
+    const code = String(b.promo || '').trim().toUpperCase();
+    if (code) {
+      const pc = await rest(`promo_codes?code=eq.${encodeURIComponent(code)}&active=eq.true&select=code,percent`);
+      const row = pc.ok ? (await pc.json())[0] : null;
+      if (!row) return res.status(400).json({ error: 'Promo-kod yaroqsiz' });
+      pct = row.percent; promoCode = row.code;
+    }
     const discount = Math.round(subtotal * pct / 100);
     const amount = subtotal - discount;
     const totalCost = items.reduce((s, i) => s + i.cost * i.qty, 0);
@@ -53,21 +70,31 @@ module.exports = async (req, res) => {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify({
-        customer: name, product: summary.slice(0, 500), amount, cost: totalCost, discount, payment, phone, address,
+        customer: name, product: summary.slice(0, 500), amount, cost: totalCost, discount, payment, phone,
+        address: `${loc.name} — ${loc.address}`, location_id: loc.id, promo_code: promoCode,
         items, tg_user_id: auth.user.id, tg_username: auth.user.username || null
       })
     });
     if (!ins.ok) return res.status(500).json({ error: 'Buyurtma saqlanmadi' });
     const order = (await ins.json())[0];
 
-    // Mijozga bot orqali tasdiq xabari (xato bo'lsa, buyurtmaga ta'sir qilmaydi)
+    // Mijoz profilini (yo'q bo'lsa) yaratish
+    try {
+      const [fn, ...rest_] = name.split(/\s+/);
+      await rest('customers?on_conflict=tg_user_id', {
+        method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates' },
+        body: JSON.stringify({ tg_user_id: auth.user.id, first_name: fn, last_name: rest_.join(' '), phone })
+      });
+    } catch (_) {}
+
+    // Mijozga bot orqali tasdiq xabari
     try {
       await fetch(`https://api.telegram.org/bot${auth.token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: auth.user.id,
-          text: `✅ Buyurtmangiz qabul qilindi!\n\n#MEL-${order.id}\n${items.map(i => `• ${i.name} (${i.size}) × ${i.qty}`).join('\n')}\n\nJami: ${money(amount)}\nOperatorimiz tez orada siz bilan bog'lanadi.`
+          text: `✅ Buyurtmangiz qabul qilindi!\n\n#MEL-${order.id}\n${items.map(i => `• ${i.name} (${i.size}) × ${i.qty}`).join('\n')}\n\nManzil: ${loc.name}\nJami: ${money(amount)}\nOperatorimiz tez orada siz bilan bog'lanadi.`
         })
       });
     } catch (_) {}
