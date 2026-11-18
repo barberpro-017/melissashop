@@ -1,7 +1,7 @@
 const { SB, KEY, rest, body, verifyInitData } = require('./_lib');
+const { notifyOrder } = require('./_notify');
 
 const DEF_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
-const money = n => Number(n).toLocaleString('en-US') + " so'm";
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -17,6 +17,11 @@ module.exports = async (req, res) => {
     const payment = String(b.payment || '').trim().slice(0, 60);
     if (!name || phone.replace(/\D/g, '').length < 9)
       return res.status(400).json({ error: "Ism va telefon raqamni to'liq kiriting (Profil → Mening profilim)" });
+
+    // To'lov turi faqat admin yoqib qo'ygan turlardan
+    const pmr = await rest('payment_methods?active=eq.true&select=name');
+    const pms = pmr.ok ? (await pmr.json()).map(x => x.name) : [];
+    if (pms.length && !pms.includes(payment)) return res.status(400).json({ error: "To'lov turini tanlang" });
 
     // Yetkazib berish nuqtasi faqat admin kiritgan ro'yxatdan
     const lid = Number(b.location_id);
@@ -53,15 +58,19 @@ module.exports = async (req, res) => {
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    let pct = 0, promoCode = null;
+    let pct = 0, promoCode = null, eligible = subtotal;
     const code = String(b.promo || '').trim().toUpperCase();
     if (code) {
-      const pc = await rest(`promo_codes?code=eq.${encodeURIComponent(code)}&active=eq.true&select=code,percent`);
+      const pc = await rest(`promo_codes?code=eq.${encodeURIComponent(code)}&active=eq.true&select=code,percent,seller_id`);
       const row = pc.ok ? (await pc.json())[0] : null;
       if (!row) return res.status(400).json({ error: 'Promo-kod yaroqsiz' });
       pct = row.percent; promoCode = row.code;
+      if (row.seller_id) {
+        eligible = items.filter(i => i.seller_id === row.seller_id).reduce((s, i) => s + i.price * i.qty, 0);
+        if (!eligible) return res.status(400).json({ error: "Bu promo-kod savatdagi mahsulotlarga amal qilmaydi" });
+      }
     }
-    const discount = Math.round(subtotal * pct / 100);
+    const discount = Math.round(eligible * pct / 100);
     const amount = subtotal - discount;
     const totalCost = items.reduce((s, i) => s + i.cost * i.qty, 0);
     const summary = items.map(i => `${i.name} (${i.size})${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ');
@@ -72,7 +81,7 @@ module.exports = async (req, res) => {
       body: JSON.stringify({
         customer: name, product: summary.slice(0, 500), amount, cost: totalCost, discount, payment, phone,
         address: `${loc.name} — ${loc.address}`, location_id: loc.id, promo_code: promoCode,
-        items, tg_user_id: auth.user.id, tg_username: auth.user.username || null
+        items, tg_user_id: auth.user.id, tg_username: auth.user.username || null, bot_id: Number(String(auth.token).split(':')[0])
       })
     });
     if (!ins.ok) return res.status(500).json({ error: 'Buyurtma saqlanmadi' });
@@ -87,19 +96,11 @@ module.exports = async (req, res) => {
       });
     } catch (_) {}
 
-    // Mijozga bot orqali tasdiq xabari
-    try {
-      await fetch(`https://api.telegram.org/bot${auth.token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: auth.user.id,
-          text: `✅ Buyurtmangiz qabul qilindi!\n\n#MEL-${order.id}\n${items.map(i => `• ${i.name} (${i.size}) × ${i.qty}`).join('\n')}\n\nManzil: ${loc.name}\nJami: ${money(amount)}\nOperatorimiz tez orada siz bilan bog'lanadi.`
-        })
-      });
-    } catch (_) {}
+    // Mijozga bot orqali chiroyli tasdiq xabari (rasm, chek, bosqichlar, tugmalar)
+    let notified = false;
+    try { notified = await notifyOrder(order, 'placed'); } catch (_) {}
 
-    res.status(200).json({ ok: true, id: order.id, amount, discount });
+    res.status(200).json({ ok: true, id: order.id, amount, discount, notified });
   } catch (e) {
     res.status(500).json({ error: 'Server xatosi' });
   }

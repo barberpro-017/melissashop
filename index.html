@@ -96,8 +96,10 @@
                     <button onclick="switchSection('bots')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="bots"><i class="fa-solid fa-robot w-5"></i><span>5. Bot nazorati</span></button>
                     <button onclick="switchSection('analytics')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="analytics"><i class="fa-solid fa-chart-line w-5"></i><span>6. Analitika</span></button>
                     <button onclick="switchSection('locations')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="locations"><i class="fa-solid fa-location-dot w-5"></i><span>7. Yetkazib berish nuqtalari</span></button>
-                    <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>8. Admin sozlamalari</span></button>
-                    <button onclick="switchSection('discounts')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="discounts"><i class="fa-solid fa-gift w-5"></i><span>9. Chegirmalar</span></button>
+                    <button onclick="switchSection('payments')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="payments"><i class="fa-solid fa-wallet w-5"></i><span>8. To'lov turlari</span></button>
+                    <button onclick="switchSection('support')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="support"><i class="fa-solid fa-headset w-5"></i><span>9. Izoh va shikoyatlar</span><span id="sup-badge" class="hidden ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">0</span></button>
+                    <button onclick="switchSection('settings')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="settings"><i class="fa-solid fa-gear w-5"></i><span>10. Admin sozlamalari</span></button>
+                    <button onclick="switchSection('discounts')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-600 hover:bg-melissaBg transition" data-section="discounts"><i class="fa-solid fa-gift w-5"></i><span>11. Chegirmalar</span></button>
                 </div>
             </aside>
 
@@ -273,6 +275,24 @@
                     <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </section>
 
+                <!-- PAYMENTS -->
+                <section id="sec-payments" class="admin-section hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-serif font-bold text-2xl">To'lov turlari</h2>
+                        <button onclick="pmForm(null)" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Yangi to'lov turi</button>
+                    </div>
+                    <div id="pm-kpi" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+                    <p class="text-xs text-gray-400 leading-relaxed max-w-3xl">Faol to'lov turlari mini appda buyurtma berishda mijozga ko'rsatiladi. O'chirib qo'yilgan tur ko'rinmaydi. "Ko'rsatma" (masalan karta raqami) buyurtmadan keyin mijozga ko'rsatiladi va bot xabariga qo'shiladi.</p>
+                    <div id="pm-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                </section>
+
+                <!-- SUPPORT -->
+                <section id="sec-support" class="admin-section hidden space-y-6">
+                    <h2 class="font-serif font-bold text-2xl">Izoh va shikoyatlar</h2>
+                    <div id="sup-tabs" class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2"></div>
+                    <div id="sup-panel" class="space-y-4"></div>
+                </section>
+
                 <!-- SETTINGS -->
                 <section id="sec-settings" class="admin-section hidden space-y-6">
                     <h2 class="font-serif font-bold text-2xl">Admin Sozlamalari</h2>
@@ -291,6 +311,11 @@
                         </div>
                         <button onclick="saveSettings()" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow hover:bg-black transition">O'zgarishlarni saqlash</button>
                     </div>
+                    <div id="danger-zone" class="bg-white p-6 rounded-2xl border border-red-200 max-w-xl shadow-sm space-y-3">
+                        <div class="flex items-center gap-2 text-red-600"><i class="fa-solid fa-triangle-exclamation"></i><h3 class="font-serif font-bold text-lg">Xavfli hudud</h3></div>
+                        <p class="text-xs text-gray-500 leading-relaxed">Sinov paytida kiritilgan hamma ma'lumotni o'chirib, sayt va mini appni yangi holatga qaytaradi. Bu amalni qaytarib bo'lmaydi.</p>
+                        <button onclick="openDanger()" class="bg-red-600 text-white text-xs font-semibold px-6 py-3 rounded-xl shadow hover:bg-red-700 transition"><i class="fa-solid fa-trash-can mr-2"></i>Ma'lumotlar bazasini o'chirish</button>
+                    </div>
                 </section>
 
                 <!-- DISCOUNTS -->
@@ -306,6 +331,23 @@
             <span class="text-[11px] text-gray-400">created by : imradjabov</span>
         </footer>
     </div>
+
+    <!-- DANGER MODAL -->
+    <div id="danger-modal" class="hidden fixed inset-0 z-[70] bg-melissaDark/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto p-6 rounded-3xl border border-red-200 shadow-xl space-y-4">
+            <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div><h3 class="font-serif font-bold text-xl text-red-600">Bazani to'liq o'chirish</h3></div>
+            <p class="text-xs text-gray-600">Quyidagilar <b>qaytarib bo'lmaydigan</b> tarzda o'chiriladi:</p>
+            <ul id="danger-list" class="space-y-1.5 text-xs text-gray-700"></ul>
+            <p class="text-[11px] text-gray-500 bg-melissaBg rounded-xl p-3">Saqlanadi: admin login, asosiy do'kon (Melissa), botlar, to'lov turlari va aloqa sozlamalari.</p>
+            <div><label class="block text-xs font-semibold text-gray-700 mb-1">Tasdiqlash uchun <b class="text-red-600">O'CHIRISH</b> deb yozing</label>
+                <input id="danger-input" oninput="onDangerInput(this.value)" autocomplete="off" placeholder="O'CHIRISH" class="w-full bg-melissaBg border border-red-200 text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-red-500"></div>
+            <div class="flex justify-end gap-2 pt-1">
+                <button onclick="closeDanger()" class="text-xs font-semibold px-4 py-2.5 rounded-xl bg-melissaBg border border-melissaPeach">Bekor qilish</button>
+                <button id="danger-btn" onclick="doReset()" disabled class="text-xs font-semibold px-5 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed">Hammasini o'chirish</button>
+            </div>
+        </div>
+    </div>
+    <div id="flash" class="hidden opacity-0 fixed top-20 right-4 z-[80] bg-melissaDark text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl transition-opacity duration-300 max-w-[85vw]"></div>
 
     <!-- DETAIL MODAL -->
     <div id="detail" class="hidden fixed inset-0 z-[60] bg-melissaDark/40 backdrop-blur-sm flex items-center justify-center p-4" onclick="if(event.target===this)closeDetail()">
@@ -342,7 +384,7 @@
             'Kutilmoqda': 'bg-amber-100 text-amber-700', 'Yetkazilmoqda': 'bg-blue-100 text-blue-700',
             'Bajarildi': 'bg-green-100 text-green-700', 'Bekor qilindi': 'bg-red-100 text-red-600'
         };
-        let user = null, products = [], orders = [], locations = [], categories = [], costs = {}, catFilter = '', sellers = [], promos = [], banner = null;
+        let user = null, products = [], orders = [], locations = [], categories = [], costs = {}, catFilter = '', sellers = [], promos = [], banner = null, payments = [], supSet = null, supMsgs = [];
         const $ = id => document.getElementById(id);
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const money = n => Number(n || 0).toLocaleString('en-US') + " so'm";
@@ -397,11 +439,13 @@
         const mySid = () => Number(user.app_metadata.seller_id);
         const mainSeller = () => sellers.find(s => s.is_main) || sellers[0] || { id: 0, name: 'Melissa' };
         const sName = id => (sellers.find(s => s.id === id) || mainSeller()).name;
-        const ADMIN_ONLY = ['dashboard', 'sellers', 'bots', 'analytics', 'locations', 'discounts'];
+        const ADMIN_ONLY = ['sellers', 'bots', 'payments', 'support'];
         function applyRole() {
             const S = isSeller();
             document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('hidden', S && ADMIN_ONLY.includes(b.dataset.section)));
             $('role-label').textContent = S ? 'Sotuvchi' : 'Admin (Superuser)';
+            $('danger-zone').classList.toggle('hidden', S);
+            clearInterval(window._p); if (!S) window._p = setInterval(loadSupport, 30000);
         }
         function togglePass() {
             const i = $('login-pass'), show = i.type === 'password';
@@ -419,15 +463,17 @@
             const T = (t, c, asc) => sb.from(t).select('*').order(c, { ascending: asc });
             const sellerOrders = async () => { try { return { data: await apiCall('/api/seller-orders', 'POST', {}), error: null }; } catch (e) { return { data: [], error: e }; } };
             const rs = await Promise.all([
-                T('products', 'created_at', false), S ? sellerOrders() : T('orders', 'created_at', false), S ? none : T('locations', 'created_at', true),
-                T('categories', 'name', true), sb.from('product_costs').select('*'), T('sellers', 'id', true),
-                S ? none : sb.from('banner_settings').select('*').eq('id', 1).maybeSingle(), S ? none : T('promo_codes', 'created_at', false)
+                T('products', 'created_at', false), S ? sellerOrders() : T('orders', 'created_at', false), T('locations', 'created_at', true),
+                T('categories', 'name', true), sb.from('product_costs').select('*'), S ? sb.from('sellers_public').select('*').order('id') : T('sellers', 'id', true),
+                S ? none : sb.from('banner_settings').select('*').eq('id', 1).maybeSingle(), T('promo_codes', 'created_at', false),
+                S ? none : T('payment_methods', 'sort', true), S ? none : sb.from('support_settings').select('*').eq('id', 1).maybeSingle(),
+                S ? none : sb.from('support_messages').select('*').order('created_at', { ascending: false }).limit(300)
             ]);
             if (rs.some(x => fail(x.error))) return;
-            const [p, o, l, c, pc, sl, bn, pr] = rs;
-            products = p.data; orders = o.data; locations = l.data; categories = c.data; sellers = sl.data; banner = bn.data; promos = pr.data;
+            const [p, o, l, c, pc, sl, bn, pr, pm, ss, sm] = rs;
+            products = p.data; orders = o.data; locations = l.data; categories = c.data; sellers = sl.data; banner = bn.data; promos = pr.data; payments = pm.data; supSet = ss.data; supMsgs = sm.data;
             costs = Object.fromEntries(pc.data.map(x => [x.product_id, Number(x.cost_price)]));
-            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); renderSellers(); initDiscounts();
+            renderDashboard(); renderOrders(); renderProducts(); renderLocations(); renderAnalytics(); renderDashExtra(); renderSellers(); initDiscounts(); renderPayments(); renderSupport();
             if (!S) loadBots();
         }
 
@@ -436,8 +482,9 @@
             $('st-sales').textContent = money(done.reduce((s, o) => s + Number(o.amount), 0));
             $('st-profit').textContent = money(profit(done));
             $('st-active').textContent = orders.filter(o => ['Kutilmoqda', 'Yetkazilmoqda'].includes(o.status)).length + ' ta';
-            $('st-prod').textContent = products.length + ' ta';
-            $('st-cat').textContent = new Set(products.map(p => p.category)).size + ' ta kategoriya';
+            const mine = isSeller() ? products.filter(p => p.seller_id === mySid()) : products;
+            $('st-prod').textContent = mine.length + ' ta';
+            $('st-cat').textContent = new Set(mine.map(p => p.category)).size + ' ta kategoriya';
             $('st-cust').textContent = new Set(orders.map(o => o.customer.trim().toLowerCase())).size + ' ta';
 
             const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
@@ -512,8 +559,9 @@
         }
         async function setStatus(id, status) {
             if (isSeller()) return;
-            const { error } = await sb.from('orders').update({ status }).eq('id', id);
-            if (fail(error)) return;
+            let res;
+            try { res = await apiCall('/api/admin', 'POST', { action: 'order-status', id, status }); } catch (e) { return alert('Xatolik: ' + e.message); }
+            flash(res.notified ? 'Holat yangilandi · mijozga xabar yuborildi ✅' : 'Holat yangilandi');
             orders.find(o => o.id === id).status = status; refreshViews();
             if (!$('detail').classList.contains('hidden') && $('detail-title').textContent === 'Buyurtma #MEL-' + id) openOrder(id);
         }
@@ -524,27 +572,27 @@
         function setCat(id) { catFilter = id; renderProducts(); }
         function setPSF(v) { psf = v; if (catFilter) { const c = categories.find(x => x.id === catFilter); if (c && v && String(c.seller_id) !== v) catFilter = ''; } renderProducts(); }
         function renderChips() {
-            const S = isSeller(), multi = sellers.length > 1 && !S;
+            const S = isSeller(), multi = sellers.length > 1;
             const cnt = c => products.filter(p => p.category === c.name && p.seller_id === c.seller_id).length;
-            const list = categories.filter(c => S ? c.seller_id === mySid() : (!psf || String(c.seller_id) === psf));
+            const list = categories.filter(c => !psf || String(c.seller_id) === psf);
             $('cat-chips').innerHTML = `<button onclick="setCat('')" class="px-3 py-1.5 rounded-full border text-xs font-semibold ${!catFilter ? CAT_ACTIVE : CAT_IDLE}">Barchasi <span class="opacity-60">${products.length}</span></button>` +
-                list.map(c => `<span class="inline-flex items-center rounded-full border text-xs font-semibold ${catFilter === c.id ? CAT_ACTIVE : CAT_IDLE}"><button onclick="setCat(${c.id})" class="pl-3 pr-2 py-1.5">${esc(c.name)}${multi ? ` <span class="opacity-50 font-normal">· ${esc(sName(c.seller_id))}</span>` : ''} <span class="opacity-60">${cnt(c)}</span></button><button onclick="delCategory(${c.id})" class="pr-3 opacity-50 hover:opacity-100" title="O'chirish"><i class="fa-solid fa-xmark text-[9px]"></i></button></span>`).join('');
+                list.map(c => `<span class="inline-flex items-center rounded-full border text-xs font-semibold ${catFilter === c.id ? CAT_ACTIVE : CAT_IDLE}"><button onclick="setCat(${c.id})" class="pl-3 pr-2 py-1.5">${esc(c.name)}${multi ? ` <span class="opacity-50 font-normal">· ${esc(sName(c.seller_id))}</span>` : ''} <span class="opacity-60">${cnt(c)}</span></button>${!S || c.seller_id === mySid() ? `<button onclick="delCategory(${c.id})" class="pr-3 opacity-50 hover:opacity-100" title="O'chirish"><i class="fa-solid fa-xmark text-[9px]"></i></button>` : '<span class="pr-3"></span>'}</span>`).join('');
         }
         function renderProducts() {
             renderChips();
             const S = isSeller(), ps = $('prod-seller');
-            ps.classList.toggle('hidden', S || sellers.length < 2);
+            ps.classList.toggle('hidden', sellers.length < 2);
             ps.innerHTML = '<option value="">Barcha sotuvchilar</option>' + sellers.map(s => `<option value="${s.id}" ${String(s.id) === psf ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
             const c = categories.find(x => x.id === catFilter);
             const list = products.filter(p => (!c || (p.category === c.name && p.seller_id === c.seller_id)) && (!psf || String(p.seller_id) === psf));
             $('products-grid').innerHTML = list.map(p => {
-                const im = p.images || [], cost = costs[p.id] || 0, sp = Math.round(p.price * (100 - (p.discount_percent || 0)) / 100);
+                const im = p.images || [], cost = costs[p.id] || 0, sp = Math.round(p.price * (100 - (p.discount_percent || 0)) / 100), own = !S || p.seller_id === mySid();
                 return `
                 <div onclick="openProduct(${p.id})" class="bg-white p-4 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm relative cursor-pointer hover:shadow-md transition">
-                    <div class="absolute top-6 right-6 z-10 flex gap-1.5">
+                    ${own ? `<div class="absolute top-6 right-6 z-10 flex gap-1.5">
                         <button onclick="event.stopPropagation();productForm(${p.id})" class="w-8 h-8 rounded-lg bg-white/90 text-melissaDark shadow flex items-center justify-center hover:bg-melissaBg" title="Tahrirlash"><i class="fa-solid fa-pen text-xs"></i></button>
                         <button onclick="event.stopPropagation();delProduct(${p.id})" class="w-8 h-8 rounded-lg bg-white/90 text-red-500 shadow flex items-center justify-center hover:bg-red-50" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
-                    </div>
+                    </div>` : ''}
                     <div class="h-32 bg-gray-100 rounded-xl overflow-hidden relative">
                         ${im[0] ? `<img src="${esc(im[0])}" loading="lazy" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-2xl"></i></div>'}
                         ${im.length > 1 ? `<span class="absolute bottom-2 left-2 bg-melissaDark/80 text-white text-[10px] px-2 py-0.5 rounded-full"><i class="fa-regular fa-images mr-1"></i>${im.length}</span>` : ''}
@@ -553,20 +601,21 @@
                     <h4 class="font-serif font-semibold text-sm">${esc(p.name)}</h4>
                     <p class="text-[10px] text-gray-400">${esc(p.category)}${sellers.length > 1 && !S ? ' · ' + esc(sName(p.seller_id)) : ''}</p>
                     <p class="text-xs font-bold text-melissaDark">Sotuv: ${p.discount_percent ? `<s class="text-gray-400 font-normal">${money(p.price)}</s> ` : ''}${money(sp)}</p>
-                    <p class="text-[10px] text-gray-400">Kelish: ${money(cost)} · <span class="text-green-600 font-semibold">Foyda: ${money(sp - cost)}</span></p>
+                    ${own ? `<p class="text-[10px] text-gray-400">Kelish: ${money(cost)} · <span class="text-green-600 font-semibold">Foyda: ${money(sp - cost)}</span></p>` : ''}
                     ${(p.sizes || []).length ? `<p class="text-[10px] text-gray-400 truncate">O'lcham: ${sortSizes(p.sizes).join(', ')}</p>` : '<p class="text-[10px] text-amber-600">O\'lcham kiritilmagan</p>'}
                 </div>`; }).join('') || '<p class="text-xs text-gray-400">Mahsulotlar yo\'q</p>';
         }
         function openProduct(id) {
             const p = products.find(x => x.id === id); if (!p) return;
             const im = p.images || [], cost = costs[p.id] || 0, sp = Math.round(p.price * (100 - (p.discount_percent || 0)) / 100);
+            const own = !isSeller() || p.seller_id === mySid();
             const box = (l, v, c = '') => `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] text-gray-400 uppercase">${l}</p><p class="text-sm font-semibold ${c}">${v}</p></div>`;
             $('detail-title').textContent = p.name;
             $('detail-body').innerHTML = (im.length ? `<div class="grid grid-cols-2 gap-3">${im.map(u => `<img src="${esc(u)}" class="w-full aspect-square object-cover rounded-2xl border border-melissaPeach/60">`).join('')}</div>` : '<p class="text-xs text-gray-400">Rasm yo\'q</p>') +
-                `<div class="grid grid-cols-2 gap-3">${box('Sotuvchi', esc(sName(p.seller_id)))}${box('Kategoriya', esc(p.category))}${box('Sotuv narxi', money(p.price))}${box('Kelish narxi', money(cost))}${p.discount_percent ? box('Chegirma', '-' + p.discount_percent + '% → ' + money(sp), 'text-red-500') : ''}${box('Sof foyda (1 dona)', money(sp - cost), 'text-green-600')}</div>` +
+                `<div class="grid grid-cols-2 gap-3">${box('Sotuvchi', esc(sName(p.seller_id)))}${box('Kategoriya', esc(p.category))}${box('Sotuv narxi', money(p.price))}${own ? box('Kelish narxi', money(cost)) : ''}${p.discount_percent ? box('Chegirma', '-' + p.discount_percent + '% → ' + money(sp), 'text-red-500') : ''}${own ? box('Sof foyda (1 dona)', money(sp - cost), 'text-green-600') : ''}</div>` +
                 `<div><p class="text-[10px] text-gray-400 uppercase mb-1.5">O'lchamlar</p><div class="flex flex-wrap gap-1.5">${sortSizes(p.sizes || []).map(s => `<span class="px-2.5 py-1 rounded-lg bg-melissaBg border border-melissaPeach text-xs font-semibold">${s}</span>`).join('') || '<span class="text-xs text-gray-400">—</span>'}</div></div>` +
                 (p.description ? `<p class="text-xs text-gray-600 leading-relaxed">${esc(p.description)}</p>` : '') +
-                `<button onclick="closeDetail();productForm(${p.id})" class="bg-melissaDark text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-black transition">Tahrirlash</button>`;
+                (own ? `<button onclick="closeDetail();productForm(${p.id})" class="bg-melissaDark text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-black transition">Tahrirlash</button>` : '');
             $('detail').classList.remove('hidden');
         }
         async function delProduct(id) {
@@ -595,15 +644,16 @@
         }
 
         function renderLocations() {
-            $('locations-grid').innerHTML = locations.map(l => `
+            const S = isSeller();
+            $('locations-grid').innerHTML = locations.map(l => { const own = !S || l.seller_id === mySid(); return `
                 <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 space-y-2 shadow-sm">
                     <div class="flex justify-between items-start gap-2">
                         <h4 class="font-serif font-bold text-base">${esc(l.name)}</h4>
-                        <button onclick="delLocation(${l.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                        ${own ? `<button onclick="delLocation(${l.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can text-xs"></i></button>` : '<i class="fa-solid fa-lock text-gray-300 text-xs" title="Boshqa sotuvchi qo\'shgan: o\'chirib bo\'lmaydi"></i>'}
                     </div>
                     <p class="text-xs text-gray-500">${esc(l.address)}</p>
-                    <span class="inline-block bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Ochiq (${esc(l.hours)})</span>
-                </div>`).join('') || '<p class="text-xs text-gray-400">Filiallar yo\'q</p>';
+                    <div class="flex items-center justify-between gap-2"><span class="inline-block bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Ochiq (${esc(l.hours)})</span>${sellers.length > 1 ? `<span class="text-[10px] text-gray-400"><i class="fa-solid fa-store mr-1"></i>${esc(sName(l.seller_id))}</span>` : ''}</div>
+                </div>`; }).join('') || '<p class="text-xs text-gray-400">Filiallar yo\'q</p>';
         }
         async function delLocation(id) {
             if (!confirm("Filial o'chirilsinmi?")) return;
@@ -622,7 +672,7 @@
         }
         function closeModal() { $('modal').classList.add('hidden'); }
 
-        const L_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], N_SIZES = Array.from({ length: 13 }, (_, i) => String(36 + i * 2));
+        const L_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], N_SIZES = Array.from({ length: 58 }, (_, i) => String(36 + i * 2));
         const sortSizes = a => [...a].sort((x, y) => { const i = L_SIZES.indexOf(x), j = L_SIZES.indexOf(y); return i > -1 && j > -1 ? i - j : i > -1 ? -1 : j > -1 ? 1 : Number(x) - Number(y); });
         let imgs = [], selSizes = new Set(), editId = null;
         async function shrink(file) {
@@ -638,7 +688,16 @@
         function rmImg(i) { if (imgs[i].blob) URL.revokeObjectURL(imgs[i].url); imgs.splice(i, 1); drawPrev(); }
         function sizeChips() {
             const chip = s => `<button type="button" onclick="togSize('${s}')" class="min-w-[44px] px-3 py-1.5 rounded-xl border text-xs font-semibold transition ${selSizes.has(s) ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach text-gray-600'}">${s}</button>`;
-            $('size-chips').innerHTML = `<p class="text-[10px] text-gray-400 uppercase mb-1.5">Harfli (XS – XXXL)</p><div class="flex flex-wrap gap-2 mb-3">${L_SIZES.map(chip).join('')}</div><p class="text-[10px] text-gray-400 uppercase mb-1.5">Raqamli (36 – 60)</p><div class="flex flex-wrap gap-2">${N_SIZES.map(chip).join('')}</div><p class="text-[11px] text-gray-400 mt-2">Tanlangan: ${selSizes.size ? sortSizes(selSizes).join(', ') : '—'}</p>`;
+            const extra = sortSizes([...selSizes].filter(s => !L_SIZES.includes(s) && !N_SIZES.includes(s)));
+            $('size-chips').innerHTML = `<p class="text-[10px] text-gray-400 uppercase mb-1.5">Harfli (XS – XXXL)</p><div class="flex flex-wrap gap-2 mb-3">${L_SIZES.map(chip).join('')}</div>
+                <p class="text-[10px] text-gray-400 uppercase mb-1.5">Raqamli (36 – 150)</p><div class="flex flex-wrap gap-2 max-h-44 overflow-y-auto p-2 border border-melissaPeach/60 rounded-xl">${N_SIZES.concat(extra).map(chip).join('')}</div>
+                <div class="flex items-center gap-2 mt-2"><input id="size-custom" type="number" min="36" max="150" placeholder="Boshqa raqam (masalan 41)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomSize();}" class="flex-1 bg-melissaBg border border-melissaPeach text-xs px-3 py-2 rounded-xl focus:outline-none"><button type="button" onclick="addCustomSize()" class="text-xs font-semibold bg-melissaBg border border-melissaPeach px-3 py-2 rounded-xl hover:bg-melissaPeach/40">Qo'shish</button></div>
+                <p class="text-[11px] text-gray-400 mt-2">Tanlangan: ${selSizes.size ? sortSizes(selSizes).join(', ') : '—'}</p>`;
+        }
+        function addCustomSize() {
+            const v = Math.round(+$('size-custom').value);
+            if (!(v >= 36 && v <= 150)) return alert("O'lcham 36 dan 150 gacha bo'lsin");
+            selSizes.add(String(v)); sizeChips();
         }
         function togSize(s) { selSizes.has(s) ? selSizes.delete(s) : selSizes.add(s); sizeChips(); }
         const catOptions = (sid, cur) => categories.filter(c => c.seller_id === Number(sid)).map(c => `<option ${c.name === cur ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
@@ -697,7 +756,7 @@
         function addLocation() {
             openModal("Yangi filial", inp('name', 'Filial nomi') + inp('address', 'Manzil') + inp('hours', 'Ish vaqti', 'text', '09:00 - 21:00'),
                 async f => {
-                    const { error } = await sb.from('locations').insert(f);
+                    const { error } = await sb.from('locations').insert({ ...f, seller_id: isSeller() ? mySid() : mainSeller().id });
                     if (!fail(error)) { closeModal(); loadAll(); }
                 });
         }
@@ -805,9 +864,9 @@
                 { id: 'c7', t: "O'lchamlar taqsimoti", s: bars(sizes, String), d: bars(sizes, String) + tbl(['O\'lcham', 'Soni'], sizes.map(x => [esc(x.l), x.v])) },
                 { id: 'c8', t: 'Soatlar bo\'yicha faollik', s: line(hrs, 80) + `<p class="text-[11px] text-gray-400">Eng faol soat: ${peak}</p>`, d: line(hrs, 140) + tbl(['Soat', 'Buyurtma'], hrs.map((v, h) => [String(h).padStart(2, '0') + ':00', v]).filter(r => r[1])) },
                 { id: 'c9', t: 'Foyda tahlili', s: bars([{ l: 'Tushum', v: rev }, { l: 'Tannarx', v: cst }, { l: 'Sof foyda', v: pf }]) + `<p class="text-[11px] text-gray-400">Foyda marjasi: ${margin}%</p>`, d: pDetail },
-                { id: 'c10', t: "Sotuvchilar bo'yicha savdo", s: bars(SL.map(x => ({ l: x.l, v: x.v }))), d: bars(SL.map(x => ({ l: x.l, v: x.v }))) + sTbl },
+                ...(isSeller() ? [] : [{ id: 'c10', t: "Sotuvchilar bo'yicha savdo", s: bars(SL.map(x => ({ l: x.l, v: x.v }))), d: bars(SL.map(x => ({ l: x.l, v: x.v }))) + sTbl },
                 { id: 'c11', t: 'Sotuvchilar foydasi', s: bars(SL.map(x => ({ l: x.l, v: x.profit }))), d: bars(SL.map(x => ({ l: x.l, v: x.profit }))) + sTbl },
-                { id: 'c12', t: 'Sotuvchilar: mahsulotlar soni', s: bars(SL.map(x => ({ l: x.l, v: x.prods })), String), d: bars(SL.map(x => ({ l: x.l, v: x.prods })), String) + sTbl }
+                { id: 'c12', t: 'Sotuvchilar: mahsulotlar soni', s: bars(SL.map(x => ({ l: x.l, v: x.prods })), String), d: bars(SL.map(x => ({ l: x.l, v: x.prods })), String) + sTbl }])
             ];
             AN = {}; [...kpis, ...cards].forEach(x => AN[x.id] = x);
             $('an-kpis').innerHTML = kpis.map(k => `<button onclick="openDetail('${k.id}')" class="text-left bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2 hover:border-melissaDark hover:shadow-md transition"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-medium">${k.t}</span><i class="fa-solid ${k.icon} text-melissaAccent text-xs"></i></div><h3 class="font-bold text-xl">${k.v}</h3></button>`).join('');
@@ -961,6 +1020,207 @@
             try { await apiCall('/api/sellers', 'DELETE', { id }); loadAll(); } catch (e) { alert('Xatolik: ' + e.message); }
         }
 
+        // ---------- XABARCHA ----------
+        let flashT;
+        function flash(msg) {
+            const f = $('flash'); f.textContent = msg; f.classList.remove('hidden');
+            setTimeout(() => f.classList.remove('opacity-0'), 10);
+            clearTimeout(flashT); flashT = setTimeout(() => f.classList.add('opacity-0'), 3500);
+        }
+
+        // ---------- TO'LOV TURLARI ----------
+        const PM_ICONS = ['fa-credit-card', 'fa-money-bill-wave', 'fa-wallet', 'fa-building-columns', 'fa-mobile-screen-button', 'fa-qrcode', 'fa-hand-holding-dollar', 'fa-coins'];
+        const PM_COLORS = ['#3B82F6', '#16A34A', '#D4A373', '#8B5CF6', '#EC4899', '#F59E0B', '#14B8A6', '#2C2C2C'];
+        const PM_KINDS = [['online', 'Onlayn'], ['cash', 'Naqd pul'], ['terminal', 'Terminal'], ['transfer', "Karta o'tkazma"], ['other', 'Boshqa']];
+        let pmSel = { icon: 'fa-credit-card', color: '#3B82F6' }, pmEdit = null;
+        function renderPayments() {
+            const ok = orders.filter(o => o.status !== 'Bekor qilindi'), tot = sum(ok);
+            const st = payments.map(m => { const a = ok.filter(o => o.payment === m.name); return { m, n: a.length, rev: sum(a) }; });
+            const top = [...st].sort((a, b) => b.rev - a.rev)[0], online = sum(st.filter(x => x.m.kind === 'online'), x => x.rev);
+            const kp = (l, v, ic, sub = '') => `<div class="bg-white p-4 rounded-2xl border border-melissaPeach/60 shadow-sm"><div class="flex justify-between items-center"><span class="text-[11px] text-gray-400 font-medium">${l}</span><i class="fa-solid ${ic} text-melissaAccent text-xs"></i></div><p class="font-bold text-lg mt-1 truncate">${v}</p>${sub ? `<p class="text-[10px] text-gray-400">${sub}</p>` : ''}</div>`;
+            $('pm-kpi').innerHTML = kp('Faol turlar', `${payments.filter(m => m.active).length} / ${payments.length}`, 'fa-toggle-on') + kp("Eng ko'p ishlatilgan", top && top.rev ? esc(top.m.name) : '—', 'fa-crown', top && top.rev ? top.n + ' ta buyurtma' : '') + kp('Onlayn ulushi', (tot ? Math.round(online / tot * 100) : 0) + '%', 'fa-credit-card') + kp('Jami tushum', money(tot), 'fa-wallet');
+            $('pm-grid').innerHTML = st.map(({ m, n, rev }, i) => {
+                const share = tot ? Math.round(rev / tot * 100) : 0, kind = (PM_KINDS.find(k => k[0] === m.kind) || [0, 'Boshqa'])[1];
+                return `<div class="bg-white rounded-2xl border border-melissaPeach/60 shadow-sm overflow-hidden ${m.active ? '' : 'opacity-60'}">
+                    <div class="h-1.5" style="background:${esc(m.color)}"></div>
+                    <div class="p-5 space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg shrink-0 shadow" style="background:linear-gradient(135deg,${esc(m.color)},${esc(m.color)}99)"><i class="fa-solid ${esc(m.icon)}"></i></div>
+                            <div class="flex-1 min-w-0"><h4 class="font-serif font-bold text-base truncate">${esc(m.name)}</h4><span class="text-[10px] uppercase tracking-wider text-gray-400">${kind}</span></div>
+                            <button onclick="togPM(${m.id}, ${!m.active})" class="relative w-11 h-6 rounded-full transition shrink-0 ${m.active ? 'bg-green-500' : 'bg-gray-300'}" title="${m.active ? "O'chirish" : 'Yoqish'}"><span class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${m.active ? 'left-[22px]' : 'left-0.5'}"></span></button>
+                        </div>
+                        ${m.description ? `<p class="text-xs text-gray-500">${esc(m.description)}</p>` : ''}
+                        ${m.instructions ? `<div class="bg-melissaBg rounded-xl p-3 text-[11px] text-gray-600 whitespace-pre-line"><i class="fa-solid fa-circle-info text-melissaAccent mr-1"></i>${esc(m.instructions)}</div>` : ''}
+                        <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-500">${n} ta buyurtma</span><b>${money(rev)}</b></div><div class="h-2 bg-melissaBg rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${share}%;background:${esc(m.color)}"></div></div><p class="text-[10px] text-gray-400 mt-1">Tushumning ${share}%</p></div>
+                        <div class="flex gap-2">
+                            <button onclick="movePM(${m.id}, -1)" ${i === 0 ? 'disabled' : ''} class="px-3 py-2 rounded-xl bg-melissaBg border border-melissaPeach text-xs disabled:opacity-30"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button onclick="movePM(${m.id}, 1)" ${i === st.length - 1 ? 'disabled' : ''} class="px-3 py-2 rounded-xl bg-melissaBg border border-melissaPeach text-xs disabled:opacity-30"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button onclick="pmForm(${m.id})" class="flex-1 text-xs font-semibold py-2 rounded-xl bg-melissaBg border border-melissaPeach hover:bg-melissaPeach/40 transition"><i class="fa-solid fa-pen mr-1.5"></i>Tahrirlash</button>
+                            <button onclick="delPM(${m.id})" class="px-3 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 transition" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button>
+                        </div></div></div>`;
+            }).join('') || '<p class="text-xs text-gray-400">To\'lov turlari yo\'q. "Yangi to\'lov turi" tugmasi bilan qo\'shing.</p>';
+        }
+        async function togPM(id, active) { const { error } = await sb.from('payment_methods').update({ active }).eq('id', id); if (!fail(error)) { payments.find(m => m.id === id).active = active; renderPayments(); } }
+        async function movePM(id, d) {
+            const i = payments.findIndex(m => m.id === id), j = i + d; if (j < 0 || j >= payments.length) return;
+            const arr = [...payments]; const [a] = arr.splice(i, 1); arr.splice(j, 0, a);
+            const rs = await Promise.all(arr.map((m, k) => m.sort === k ? { error: null } : sb.from('payment_methods').update({ sort: k }).eq('id', m.id)));
+            if (rs.some(r => fail(r.error))) return;
+            arr.forEach((m, k) => m.sort = k); payments = arr; renderPayments();
+        }
+        async function delPM(id) {
+            const m = payments.find(x => x.id === id), used = orders.filter(o => o.payment === m.name).length;
+            if (!confirm(`"${m.name}" o'chirilsinmi?${used ? `\nEski ${used} ta buyurtmada nomi saqlanib qoladi.` : ''}`)) return;
+            const { error } = await sb.from('payment_methods').delete().eq('id', id);
+            if (!fail(error)) { payments = payments.filter(x => x.id !== id); renderPayments(); }
+        }
+        function pmPickers() {
+            $('pm-icons').innerHTML = PM_ICONS.map(ic => `<button type="button" onclick="pmPick('icon', '${ic}')" class="w-10 h-10 rounded-xl border flex items-center justify-center transition ${pmSel.icon === ic ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach text-gray-500'}"><i class="fa-solid ${ic}"></i></button>`).join('');
+            $('pm-colors').innerHTML = PM_COLORS.map(c => `<button type="button" onclick="pmPick('color', '${c}')" class="w-8 h-8 rounded-full border-2 transition ${pmSel.color === c ? 'border-melissaDark scale-110' : 'border-white shadow'}" style="background:${c}"></button>`).join('');
+        }
+        function pmPick(k, v) { pmSel[k] = v; pmPickers(); }
+        function pmForm(id) {
+            const m = id ? payments.find(x => x.id === id) : null; pmEdit = m;
+            pmSel = { icon: m ? m.icon : 'fa-credit-card', color: m ? m.color : '#3B82F6' };
+            openModal(m ? "To'lov turini tahrirlash" : "Yangi to'lov turi",
+                inp('name', 'Nomi', 'text', 'Masalan: Uzum Nasiya', m ? m.name : '') + selF('kind', 'Turi', PM_KINDS.map(k => ({ v: k[0], l: k[1] })), m ? m.kind : 'online') +
+                inp('description', 'Qisqa tavsif (ixtiyoriy)', 'text', "Mijozga ko'rinadi", m ? (m.description || '') : '') +
+                `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Ko'rsatma (ixtiyoriy)</label><textarea name="instructions" rows="3" placeholder="Masalan: Karta: 8600 1234 5678 9012 (Ism Familiya). To'lovdan so'ng chekni yuboring." class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${esc(m ? (m.instructions || '') : '')}</textarea><p class="text-[11px] text-gray-400 mt-1">Buyurtmadan keyin mijozga ko'rsatiladi va bot xabariga qo'shiladi.</p></div>` +
+                `<div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Belgi</label><div id="pm-icons" class="flex flex-wrap gap-2"></div></div><div><label class="block text-xs font-semibold text-gray-700 mb-1.5">Rang</label><div id="pm-colors" class="flex flex-wrap gap-3"></div></div>`,
+                async f => {
+                    const row = { name: f.name.trim(), kind: f.kind, description: (f.description || '').trim() || null, instructions: (f.instructions || '').trim() || null, icon: pmSel.icon, color: pmSel.color };
+                    let error;
+                    if (pmEdit) {
+                        ({ error } = await sb.from('payment_methods').update(row).eq('id', pmEdit.id));
+                        if (!error && row.name !== pmEdit.name) await sb.from('orders').update({ payment: row.name }).eq('payment', pmEdit.name);
+                    } else ({ error } = await sb.from('payment_methods').insert({ ...row, sort: payments.length }));
+                    if (error && error.code === '23505') return alert("Bunday nomli to'lov turi allaqachon bor");
+                    if (!fail(error)) { closeModal(); loadAll(); }
+                });
+            pmPickers();
+        }
+
+        // ---------- IZOH VA SHIKOYATLAR ----------
+        let supTab = 'online', supFilter = 'all';
+        const SUPST = { 'Yangi': 'bg-amber-100 text-amber-700', "Ko'rildi": 'bg-blue-100 text-blue-700', 'Hal qilindi': 'bg-green-100 text-green-700' };
+        const SUP_TABS = [['online', 'fa-solid fa-comments', 'Online', 'Mijozlar xabarlari'], ['phone', 'fa-solid fa-phone', 'Telefon', "Qo'ng'iroq raqami"], ['telegram', 'fa-brands fa-telegram', 'Telegram', 'Akkaunt yoki kanal'], ['instagram', 'fa-brands fa-instagram', 'Instagram', 'Sahifa']];
+        const CT = {
+            phone: { f: 'phone', label: 'Telefon raqam', ph: '+998 90 123 45 67', ic: 'fa-solid fa-phone', color: '#16A34A', hint: "Mini appda bosilganda qo'ng'iroq oynasi ochiladi." },
+            telegram: { f: 'telegram', label: 'Telegram username', ph: 'melissa_shop', ic: 'fa-brands fa-telegram', color: '#2AABEE', hint: 'Faqat username (@ belgisiz). Bosilganda t.me/username ochiladi.' },
+            instagram: { f: 'instagram', label: 'Instagram username', ph: 'melissa.shop', ic: 'fa-brands fa-instagram', color: '#E1306C', hint: 'Faqat username (@ belgisiz). Bosilganda instagram.com/username ochiladi.' }
+        };
+        const unread = () => supMsgs.filter(m => !m.read).length;
+        function renderSupportBadge() { const n = unread(), b = $('sup-badge'); b.textContent = n > 9 ? '9+' : n; b.classList.toggle('hidden', !n); }
+        async function loadSupport() {
+            const { data, error } = await sb.from('support_messages').select('*').order('created_at', { ascending: false }).limit(300);
+            if (error) return;
+            const prev = unread(); supMsgs = data; renderSupportBadge();
+            if (unread() > prev) flash('💬 Yangi xabar keldi');
+            if (!$('sec-support').classList.contains('hidden')) renderSupport();
+        }
+        function setSupTab(k) { supTab = k; renderSupport(); }
+        function renderSupport() {
+            const n = unread();
+            $('sup-tabs').innerHTML = SUP_TABS.map(([k, ic, t, d]) => `<button onclick="setSupTab('${k}')" class="relative text-left p-4 rounded-2xl border shadow-sm transition ${supTab === k ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach/60 hover:border-melissaDark'}"><i class="${ic} mb-2 text-melissaAccent"></i><p class="font-serif font-bold text-sm">${t}</p><p class="text-[11px] ${supTab === k ? 'text-gray-300' : 'text-gray-400'}">${d}</p>${k === 'online' && n ? `<span class="absolute -top-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-melissaBg animate-pulse">${n}</span>` : ''}</button>`).join('');
+            renderSupportBadge();
+            supTab === 'online' ? panelOnline() : panelContact(supTab);
+        }
+        const msgCard = m => `<div class="relative bg-white rounded-2xl border ${!m.read ? 'border-red-300 shadow-md' : 'border-melissaPeach/60 shadow-sm'} p-4 space-y-3">
+            ${!m.read ? '<span class="absolute -top-2 left-4 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">YANGI</span>' : ''}
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2"><span class="${m.kind === 'Shikoyat' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'} text-[11px] font-bold px-2.5 py-1 rounded-full">${m.kind === 'Shikoyat' ? '⚠️ Shikoyat' : '💬 Izoh'}</span><span class="${SUPST[m.status] || ''} text-[11px] font-semibold px-2.5 py-1 rounded-full">${esc(m.status)}</span></div>
+                <span class="text-[11px] text-gray-400">${fdate(m.created_at)}</span>
+            </div>
+            ${m.product_name ? `<p class="text-xs"><span class="bg-melissaBg border border-melissaPeach px-2.5 py-1 rounded-lg"><i class="fa-solid fa-shirt text-melissaAccent mr-1.5"></i>${esc(m.product_name)}</span></p>` : ''}
+            <p class="text-sm text-gray-800 whitespace-pre-line break-words">${esc(m.message)}</p>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500"><span><i class="fa-regular fa-user mr-1"></i>${esc(m.name || 'Mijoz')}</span>${m.phone ? `<a href="tel:${esc(String(m.phone).replace(/[^+\d]/g, ''))}" class="text-melissaAccent"><i class="fa-solid fa-phone mr-1"></i>${esc(m.phone)}</a>` : ''}${m.tg_username ? `<a href="https://t.me/${esc(m.tg_username)}" target="_blank" rel="noopener" class="text-melissaAccent"><i class="fa-brands fa-telegram mr-1"></i>@${esc(m.tg_username)}</a>` : ''}</div>
+            ${m.admin_reply ? `<div class="bg-melissaBg rounded-xl p-3 text-xs"><p class="text-[10px] uppercase text-gray-400 mb-1">Javobingiz · ${fdate(m.replied_at)}</p><p class="whitespace-pre-line">${esc(m.admin_reply)}</p></div>` : ''}
+            <div class="flex flex-wrap gap-2 pt-1">
+                <button onclick="replyMsg(${m.id})" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-black transition"><i class="fa-solid fa-reply mr-1.5"></i>${m.admin_reply ? 'Yana javob' : 'Javob yozish'}</button>
+                ${!m.read ? `<button onclick="markRead(${m.id})" class="bg-melissaBg border border-melissaPeach text-xs font-semibold px-4 py-2 rounded-xl hover:bg-melissaPeach/40 transition">O'qildi</button>` : ''}
+                ${m.status !== 'Hal qilindi' ? `<button onclick="setMsg(${m.id}, { status: 'Hal qilindi', read: true })" class="bg-green-50 text-green-600 border border-green-100 text-xs font-semibold px-4 py-2 rounded-xl hover:bg-green-100 transition">Hal qilindi</button>` : ''}
+                <button onclick="delMsg(${m.id})" class="ml-auto text-red-400 hover:text-red-600 px-2" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button>
+            </div></div>`;
+        function panelOnline() {
+            const c = f => supMsgs.filter(f).length;
+            const FIL = [['all', 'Hammasi', supMsgs.length], ['new', 'Yangi', unread()], ['Shikoyat', 'Shikoyatlar', c(m => m.kind === 'Shikoyat')], ['Izoh', 'Izohlar', c(m => m.kind === 'Izoh')], ['done', 'Hal qilingan', c(m => m.status === 'Hal qilindi')]];
+            const list = supMsgs.filter(m => supFilter === 'all' ? true : supFilter === 'new' ? !m.read : supFilter === 'done' ? m.status === 'Hal qilindi' : m.kind === supFilter);
+            $('sup-panel').innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap gap-2">${FIL.map(([k, l, n]) => `<button onclick="supFilter='${k}';panelOnline()" class="px-3 py-1.5 rounded-full border text-xs font-semibold transition ${supFilter === k ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach text-gray-600'}">${l} <span class="opacity-60">${n}</span></button>`).join('')}</div>
+                    ${unread() ? `<button onclick="markAllRead()" class="text-xs font-semibold text-melissaAccent"><i class="fa-solid fa-check-double mr-1"></i>Hammasini o'qildi deb belgilash</button>` : ''}
+                </div>
+                <div class="space-y-4 pt-1">${list.map(msgCard).join('') || '<div class="bg-white rounded-2xl border border-melissaPeach/60 text-center py-14 text-gray-400"><i class="fa-regular fa-comments text-4xl mb-2 text-melissaAccent"></i><p class="text-sm">Xabarlar yo\'q</p></div>'}</div>`;
+        }
+        async function setMsg(id, patch) {
+            const { error } = await sb.from('support_messages').update(patch).eq('id', id);
+            if (!fail(error)) { Object.assign(supMsgs.find(m => m.id === id), patch); renderSupport(); }
+        }
+        const markRead = id => setMsg(id, { read: true });
+        async function markAllRead() {
+            const { error } = await sb.from('support_messages').update({ read: true }).eq('read', false);
+            if (!fail(error)) { supMsgs.forEach(m => m.read = true); renderSupport(); }
+        }
+        async function delMsg(id) {
+            if (!confirm("Xabar o'chirilsinmi?")) return;
+            const { error } = await sb.from('support_messages').delete().eq('id', id);
+            if (!fail(error)) { supMsgs = supMsgs.filter(m => m.id !== id); renderSupport(); }
+        }
+        function replyMsg(id) {
+            const m = supMsgs.find(x => x.id === id);
+            openModal('Javob yozish', `<div class="bg-melissaBg rounded-xl p-3 text-xs text-gray-600 whitespace-pre-line">${esc(m.message)}</div>
+                <div><label class="block text-xs font-semibold text-gray-700 mb-1">Javobingiz (mijozga bot orqali yuboriladi)</label><textarea name="reply" required rows="5" maxlength="1000" class="w-full bg-melissaBg border border-melissaPeach text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">${esc(m.admin_reply || '')}</textarea></div>`,
+                async f => {
+                    const b = $('modal-form').querySelector('[type=submit]'); b.disabled = true;
+                    try { const r = await apiCall('/api/admin', 'POST', { action: 'support-reply', id, reply: f.reply }); closeModal(); flash(r.notified ? 'Javob mijozga yuborildi ✅' : 'Javob saqlandi (mijozga xabar yetmadi)'); loadSupport(); }
+                    catch (e) { alert('Xatolik: ' + e.message); }
+                    b.disabled = false;
+                });
+        }
+        function panelContact(k) {
+            const c = CT[k], v = (supSet && supSet[c.f]) || '', title = k === 'phone' ? 'Telefon' : k === 'telegram' ? 'Telegram' : 'Instagram';
+            $('sup-panel').innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-4">
+                    <h4 class="font-serif font-bold text-base">${c.label}</h4>
+                    <input id="ct-val" value="${esc(v)}" placeholder="${esc(c.ph)}" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark">
+                    ${k === 'phone' ? `<div><label class="block text-xs font-semibold text-gray-700 mb-1">Ish vaqti (ixtiyoriy)</label><input id="ct-hours" value="${esc((supSet && supSet.work_hours) || '')}" placeholder="09:00 - 21:00" class="w-full bg-melissaBg border border-melissaPeach text-sm px-4 py-3 rounded-xl focus:outline-none focus:border-melissaDark"></div>` : ''}
+                    <p class="text-[11px] text-gray-400">${c.hint}</p>
+                    <button onclick="saveContact('${k}')" class="bg-melissaDark text-white text-xs font-semibold px-6 py-3 rounded-xl shadow hover:bg-black transition">Saqlash</button>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-3">
+                    <h4 class="font-serif font-bold text-base">Mini appda ko'rinishi</h4>
+                    <div class="max-w-sm flex items-center gap-3 p-4 rounded-2xl border border-melissaPeach/60 bg-melissaBg"><span class="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0" style="background:${c.color}"><i class="${c.ic}"></i></span><span class="flex-1 min-w-0"><b class="block text-sm">${title}</b><span class="text-[11px] text-gray-500">${v ? esc(k === 'phone' ? v : '@' + v) : 'Kiritilmagan: mijozga "Tez orada" ko\'rinadi'}</span></span><i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i></div>
+                </div></div>`;
+        }
+        async function saveContact(k) {
+            let v = $('ct-val').value.trim();
+            if (k !== 'phone') v = v.replace(/^https?:\/\/(www\.)?(t\.me|instagram\.com)\//i, '').replace(/^@/, '').replace(/[\/?#].*$/, '');
+            if (v && k !== 'phone' && !/^[A-Za-z0-9_.]{3,40}$/.test(v)) return alert("Username noto'g'ri. Faqat lotin harflari, raqam, _ va nuqta");
+            if (k === 'phone' && v && v.replace(/\D/g, '').length < 9) return alert("Telefon raqam noto'g'ri");
+            const row = { ...(supSet || {}), id: 1, [k]: v || null, updated_at: new Date().toISOString() };
+            if (k === 'phone') row.work_hours = ($('ct-hours').value || '').trim() || null;
+            const { error } = await sb.from('support_settings').upsert(row);
+            if (!fail(error)) { supSet = row; flash('Saqlandi ✅'); renderSupport(); }
+        }
+
+        // ---------- BAZANI O'CHIRISH ----------
+        function openDanger() {
+            const li = t => `<li class="flex items-start gap-2"><i class="fa-solid fa-xmark text-red-500 mt-0.5 text-[10px]"></i><span>${t}</span></li>`;
+            $('danger-list').innerHTML = li(`<b>${orders.length}</b> ta buyurtma`) + li(`<b>${products.length}</b> ta mahsulot (rasmlari bilan) va kelish narxlari`) + li(`<b>${categories.length}</b> ta kategoriya`) +
+                li(`<b>${locations.length}</b> ta yetkazib berish nuqtasi`) + li(`<b>${sellers.filter(s => !s.is_main).length}</b> ta sotuvchi va ularning kirish huquqi`) + li(`<b>${promos.length}</b> ta promokod, reklama posteri, chegirmalar`) + li(`mijozlar profili va <b>${supMsgs.length}</b> ta murojaat`);
+            $('danger-input').value = ''; $('danger-btn').disabled = true; $('danger-btn').textContent = "Hammasini o'chirish";
+            $('danger-modal').classList.remove('hidden');
+        }
+        function closeDanger() { $('danger-modal').classList.add('hidden'); }
+        function onDangerInput(v) { $('danger-btn').disabled = v.trim().toUpperCase().replace(/[’ʻʼ`‘]/g, "'") !== "O'CHIRISH"; }
+        async function doReset() {
+            const b = $('danger-btn'); b.disabled = true; b.textContent = "O'chirilmoqda...";
+            try {
+                await apiCall('/api/admin', 'POST', { action: 'reset-db', confirm: $('danger-input').value });
+                closeDanger(); await loadAll(); flash('Baza tozalandi: sayt va mini app yangi holatda ✅'); switchSection('dashboard');
+            } catch (e) { alert('Xatolik: ' + e.message); b.disabled = false; b.textContent = "Hammasini o'chirish"; }
+        }
+
         // ---------- CHEGIRMALAR ----------
         let dtab = 'poster', bn = null, pickPct = 10, dSel = new Set(), dq = '';
         const BN_DEF = { badge: 'Yangi Kolleksiya', title: 'Bahoriy Nafislik', subtitle: "Savatda promo-kod bilan chegirmaga ega bo'ling.", button_text: 'Xarid qilish', bg_from: '#2C2C2C', bg_to: '#2C2C2C', text_color: '#FFFFFF', badge_color: '#D4A373', image_product_id: null, product_ids: [] };
@@ -971,14 +1231,13 @@
             { n: 'Kechki ko\'k', a: '#2E3A59', b: '#161C2E', t: '#FFFFFF', c: '#F6D8CE' }, { n: 'Mercan', a: '#E98A73', b: '#C4553F', t: '#FFFFFF', c: '#2C2C2C' }
         ];
         const ink = h => { const n = parseInt(String(h).replace('#', ''), 16) || 0; return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? '#2C2C2C' : '#FFFFFF'; };
-        function initDiscounts() { bn = { ...BN_DEF, ...(banner || {}) }; bn.product_ids = [...((banner && banner.product_ids) || [])]; renderDiscounts(); }
+        function initDiscounts() { if (isSeller() && dtab === 'poster') dtab = 'percent'; bn = { ...BN_DEF, ...(banner || {}) }; bn.product_ids = [...((banner && banner.product_ids) || [])]; renderDiscounts(); }
         function discTab(k) { dtab = k; dq = ''; renderDiscounts(); }
         function renderDiscounts() {
-            $('disc-tabs').innerHTML = [['poster', 'fa-image', 'Reklama poster', 'Asosiy sahifadagi banner'], ['percent', 'fa-percent', 'Foizli chegirmalar', 'Tanlangan mahsulotlarga'], ['promo', 'fa-ticket', 'Promokodlar', 'Savatda kiritiladigan kodlar']]
-                .map(([k, ic, t, d]) => `<button onclick="discTab('${k}')" class="text-left p-4 rounded-2xl border shadow-sm transition ${dtab === k ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach/60 hover:border-melissaDark'}"><i class="fa-solid ${ic} mb-2 text-melissaAccent"></i><p class="font-serif font-bold text-sm">${t}</p><p class="text-[11px] ${dtab === k ? 'text-gray-300' : 'text-gray-400'}">${d}</p></button>`).join('');
+            $('disc-tabs').innerHTML = [['poster', 'fa-image', 'Reklama poster', 'Asosiy sahifadagi banner'], ['percent', 'fa-percent', 'Foizli chegirmalar', 'Tanlangan mahsulotlarga'], ['promo', 'fa-ticket', 'Promokodlar', 'Savatda kiritiladigan kodlar']].filter(t => !(isSeller() && t[0] === 'poster')).map(([k, ic, t, d]) => `<button onclick="discTab('${k}')" class="text-left p-4 rounded-2xl border shadow-sm transition ${dtab === k ? 'bg-melissaDark text-white border-melissaDark' : 'bg-white border-melissaPeach/60 hover:border-melissaDark'}"><i class="fa-solid ${ic} mb-2 text-melissaAccent"></i><p class="font-serif font-bold text-sm">${t}</p><p class="text-[11px] ${dtab === k ? 'text-gray-300' : 'text-gray-400'}">${d}</p></button>`).join('');
             ({ poster: panelPoster, percent: panelPercent, promo: panelPromo })[dtab]();
         }
-        const dFilter = () => products.filter(p => !dq || p.name.toLowerCase().includes(dq.toLowerCase()));
+        const dFilter = () => products.filter(p => (!isSeller() || p.seller_id === mySid()) && (!dq || p.name.toLowerCase().includes(dq.toLowerCase())));
         const thumb = p => `<div class="w-11 h-11 rounded-lg bg-melissaBg overflow-hidden shrink-0">${(p.images || [])[0] ? `<img src="${esc(p.images[0])}" class="w-full h-full object-cover">` : ''}</div>`;
         const discBadge = p => p.discount_percent ? ` · <span class="text-red-500 font-semibold">-${p.discount_percent}%</span>` : '';
 
@@ -1082,17 +1341,17 @@
             $('disc-panel').innerHTML = `
             <div class="flex justify-between items-center flex-wrap gap-2"><p class="text-xs text-gray-500">Mijoz savatda promokodni kiritganda umumiy summadan chegirma beriladi.</p><button onclick="addPromo()" class="bg-melissaDark text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow hover:bg-black transition">+ Promokod yaratish</button></div>
             <div class="bg-white rounded-2xl border border-melissaPeach/60 overflow-x-auto shadow-sm"><table class="w-full text-left text-xs">
-                <thead class="bg-melissaBg border-b border-melissaPeach/60 text-gray-500 uppercase"><tr><th class="p-4">Promokod</th><th class="p-4">Chegirma</th><th class="p-4">Ishlatilgan</th><th class="p-4">Holati</th><th class="p-4"></th></tr></thead>
-                <tbody class="divide-y divide-gray-100">${promos.map(c => `<tr><td class="p-4 font-bold tracking-wider">${esc(c.code)}</td><td class="p-4"><span class="bg-red-50 text-red-500 font-bold px-2.5 py-1 rounded-full">${c.percent}%</span></td><td class="p-4">${uses(c.code)} marta</td>
+                <thead class="bg-melissaBg border-b border-melissaPeach/60 text-gray-500 uppercase"><tr><th class="p-4">Promokod</th><th class="p-4">Chegirma</th><th class="p-4">Amal qiladi</th><th class="p-4">Ishlatilgan</th><th class="p-4">Holati</th><th class="p-4"></th></tr></thead>
+                <tbody class="divide-y divide-gray-100">${promos.map(c => `<tr><td class="p-4 font-bold tracking-wider">${esc(c.code)}</td><td class="p-4"><span class="bg-red-50 text-red-500 font-bold px-2.5 py-1 rounded-full">${c.percent}%</span></td><td class="p-4 text-gray-500">${c.seller_id ? esc(sName(c.seller_id)) + ' mahsulotlari' : 'Barcha mahsulotlar'}</td><td class="p-4">${uses(c.code)} marta</td>
                     <td class="p-4"><button onclick="togPromo(${c.id}, ${!c.active})" class="${c.active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'} px-2.5 py-1 rounded-full font-semibold">${c.active ? 'Faol' : "O'chirilgan"}</button></td>
-                    <td class="p-4 text-right"><button onclick="delPromo(${c.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button></td></tr>`).join('') || '<tr><td colspan="5" class="p-8 text-center text-gray-400">Promokodlar yo\'q</td></tr>'}</tbody></table></div>`;
+                    <td class="p-4 text-right"><button onclick="delPromo(${c.id})" class="text-red-400 hover:text-red-600" title="O'chirish"><i class="fa-regular fa-trash-can"></i></button></td></tr>`).join('') || '<tr><td colspan="6" class="p-8 text-center text-gray-400">Promokodlar yo\'q</td></tr>'}</tbody></table></div>`;
         }
         function addPromo() {
             openModal('Yangi promokod', inp('code', 'Promokod', 'text', 'MELISSA10') + inp('percent', 'Necha foizlik chegirma (%)', 'number', '10'), async f => {
                 const code = f.code.trim().toUpperCase().replace(/\s+/g, ''), percent = Math.round(+f.percent);
                 if (!/^[A-Z0-9_-]{3,20}$/.test(code)) return alert('Promokod: 3-20 belgi, faqat lotin harflari, raqam, _ va -');
                 if (!(percent >= 1 && percent <= 90)) return alert("Chegirma 1% dan 90% gacha bo'lsin");
-                const { error } = await sb.from('promo_codes').insert({ code, percent });
+                const { error } = await sb.from('promo_codes').insert({ code, percent, seller_id: isSeller() ? mySid() : null });
                 if (error && error.code === '23505') return alert('Bunday promokod allaqachon bor');
                 if (!fail(error)) { closeModal(); loadAll(); }
             });

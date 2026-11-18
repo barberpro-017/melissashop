@@ -155,6 +155,10 @@
                     <span class="flex items-center space-x-3"><i class="fa-solid fa-gift text-melissaAccent w-4"></i><span>Melissa Club Karta</span></span>
                     <i class="fa-solid fa-chevron-right text-gray-400"></i>
                 </div>
+                <div onclick="openSupport()" class="p-4 flex items-center justify-between text-xs font-medium hover:bg-melissaBg cursor-pointer">
+                    <span class="flex items-center space-x-3"><i class="fa-solid fa-headset text-melissaAccent w-4"></i><span>Qo'llab-quvvatlash</span></span>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                </div>
             </div>
         </section>
     </main>
@@ -210,9 +214,7 @@
                 <div><label class="font-semibold text-gray-700 block mb-1">Yetkazib berish nuqtasi</label>
                     <div id="loc-pick" class="space-y-2"></div></div>
                 <div><label class="font-semibold text-gray-700 block mb-1">To'lov turi</label>
-                    <select id="checkout-pay" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none">
-                        <option>Payme / Click (Online)</option><option>Kuryerga naqd pul orqali</option><option>Terminal orqali</option>
-                    </select></div>
+                    <div id="pay-pick" class="space-y-2"></div></div>
             </div>
             <div class="flex justify-between text-sm font-bold pt-1"><span>Jami:</span><span id="checkout-total"></span></div>
             <button id="order-btn" onclick="completeOrder()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl shadow-md">Buyurtmani tasdiqlash</button>
@@ -255,11 +257,11 @@
         const NOIMG = '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa-regular fa-image text-3xl"></i></div>';
         const BN_DEF = { badge: 'Yangi Kolleksiya', title: 'Bahoriy Nafislik', subtitle: 'Savatda promo-kod bilan chegirmaga ega bo\'ling.', button_text: 'Xarid qilish', bg_from: '#2C2C2C', bg_to: '#2C2C2C', text_color: '#FFFFFF', badge_color: '#D4A373', image_product_id: null, product_ids: [] };
 
-        let products = [], categories = [], sellers = [], locations = [], banner = { ...BN_DEF };
+        let products = [], categories = [], sellers = [], locations = [], payments = [], support = {}, banner = { ...BN_DEF };
         let cat = 'Barchasi', query = '', tab = 'home', only = null;
         let F = { sort: 'new', min: '', max: '', sizes: [], sellers: [], disc: false };
         let cart = ls.get('mel_cart', []), wish = ls.get('mel_wish', []);
-        let promo = 0, promoCode = '', cur = null, curSize = null, myData = null, locId = ls.get('mel_loc', null);
+        let promo = 0, promoCode = '', promoSeller = null, payName = ls.get('mel_pay', null), cur = null, curSize = null, myData = null, locId = ls.get('mel_loc', null);
         let cust = ls.get('mel_cust', {});
 
         let toastT;
@@ -280,20 +282,23 @@
         async function load() {
             $('products-grid').innerHTML = [1, 2, 3, 4].map(() => '<div class="bg-white rounded-2xl h-64 border border-melissaPeach/60 animate-pulse"></div>').join('');
             try {
-                const [p, c, sl, bn, lc] = await Promise.all([
+                const [p, c, sl, bn, lc, pm, ss] = await Promise.all([
                     q('products?select=id,name,category,price,images,description,sizes,discount_percent,seller_id&order=created_at.desc'),
                     q('categories?select=name&order=name'),
                     q('sellers_public?select=id,name').catch(() => []),
                     q('banner_settings?select=*&id=eq.1').catch(() => []),
-                    q('locations?select=id,name,address,hours&order=created_at').catch(() => [])
+                    q('locations?select=id,name,address,hours&order=created_at').catch(() => []),
+                    q('payment_methods?select=name,kind,icon,color,description,instructions&order=sort').catch(() => []),
+                    q('support_settings?select=*&id=eq.1').catch(() => [])
                 ]);
                 products = p.map(x => ({ ...x, price: Number(x.price), images: x.images || [], sizes: x.sizes || [], discount_percent: x.discount_percent || 0 }));
                 categories = [...new Set(c.map(x => x.name))];
-                sellers = sl; locations = lc;
+                sellers = sl; locations = lc; payments = pm; support = ss[0] || {};
                 banner = { ...BN_DEF, ...(bn[0] || {}) }; banner.product_ids = banner.product_ids || [];
                 cart = cart.filter(i => products.some(p => p.id === i.id)); ls.set('mel_cart', cart);
                 wish = wish.filter(id => products.some(p => p.id === id)); ls.set('mel_wish', wish);
                 if (!locations.some(l => l.id === locId)) locId = null;
+                if (!payList().some(x => x.name === payName)) payName = null;
                 renderBanner(); renderCats(); renderHome(); updateBadges();
             } catch (_) {
                 $('products-grid').innerHTML = '<div class="col-span-2 text-center py-12 text-gray-400 space-y-3"><i class="fa-solid fa-wifi text-3xl text-melissaAccent"></i><p class="text-sm">Ma\'lumotlarni yuklab bo\'lmadi</p><button onclick="load()" class="bg-melissaDark text-white text-xs px-4 py-2 rounded-full">Qayta urinish</button></div>';
@@ -488,7 +493,9 @@
         }
         const rows = () => cart.map((c, i) => ({ c, i, p: products.find(x => x.id === c.id) })).filter(r => r.p);
         function totals() {
-            const sub = rows().reduce((s, r) => s + sale(r.p) * r.c.qty, 0), disc = Math.round(sub * promo / 100);
+            const rs = rows(), sub = rs.reduce((s, r) => s + sale(r.p) * r.c.qty, 0);
+            const elig = rs.filter(r => !promoSeller || r.p.seller_id === promoSeller).reduce((s, r) => s + sale(r.p) * r.c.qty, 0);
+            const disc = Math.round(elig * promo / 100);
             return { sub, disc, total: sub - disc };
         }
         function renderCart() {
@@ -522,8 +529,10 @@
             if (!code) return;
             try {
                 const j = await post('/api/promo', { code });
-                promo = j.percent; promoCode = code; toast(`Tabriklaymiz! ${j.percent}% chegirma qo'shildi.`); renderCart();
-            } catch (_) { promo = 0; promoCode = ''; toast('Promo-kod yaroqsiz!'); renderCart(); }
+                promo = j.percent; promoCode = code; promoSeller = j.seller_id || null; renderCart();
+                if (promoSeller && !rows().some(r => r.p.seller_id === promoSeller)) toast(`Bu promo-kod faqat ${sellerName(promoSeller) || 'ayrim sotuvchi'} mahsulotlariga amal qiladi`);
+                else toast(`Tabriklaymiz! ${j.percent}% chegirma qo'shildi.`);
+            } catch (_) { promo = 0; promoCode = ''; promoSeller = null; toast('Promo-kod yaroqsiz!'); renderCart(); }
         }
 
         // ---------- Sevimlilar ----------
@@ -548,6 +557,15 @@
             el.value = '+' + [d.slice(0, 3), d.slice(3, 5), d.slice(5, 8), d.slice(8, 10), d.slice(10, 12)].filter(Boolean).join(' ');
         }
         const fullName = () => [cust.first_name || (TU && TU.first_name), cust.last_name || (TU && TU.last_name)].filter(Boolean).join(' ');
+        const DEF_PAY = [{ name: 'Payme / Click (Online)', icon: 'fa-credit-card', color: '#3B82F6' }, { name: 'Kuryerga naqd pul orqali', icon: 'fa-money-bill-wave', color: '#16A34A' }, { name: 'Terminal orqali', icon: 'fa-wallet', color: '#D4A373' }];
+        const payList = () => payments.length ? payments : DEF_PAY;
+        const payInstr = () => (payList().find(x => x.name === payName) || {}).instructions || '';
+        function renderPayPick() {
+            $('pay-pick').innerHTML = payList().map(m => { const on = payName === m.name; return `<div onclick="payName=${esc(JSON.stringify(m.name))};ls.set('mel_pay',payName);renderPayPick()" class="flex items-center gap-3 bg-white border rounded-xl p-3 cursor-pointer ${on ? 'border-melissaDark' : 'border-melissaPeach'}">
+                <span class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs shrink-0" style="background:${esc(m.color || '#D4A373')}"><i class="fa-solid ${esc(m.icon || 'fa-credit-card')}"></i></span>
+                <span class="min-w-0 flex-1"><b class="block">${esc(m.name)}</b>${m.description ? `<span class="text-gray-500">${esc(m.description)}</span>` : ''}</span>
+                <i class="fa-solid ${on ? 'fa-circle-dot text-melissaDark' : 'fa-circle text-gray-300'}"></i></div>`; }).join('');
+        }
         function renderLocPick() {
             $('loc-pick').innerHTML = locations.map(l => `<div onclick="locId=${l.id};ls.set('mel_loc',locId);renderLocPick()" class="flex items-start gap-3 bg-white border rounded-xl p-3 cursor-pointer ${locId === l.id ? 'border-melissaDark' : 'border-melissaPeach'}">
                 <i class="fa-solid ${locId === l.id ? 'fa-circle-dot text-melissaDark' : 'fa-circle text-gray-300'} mt-0.5"></i>
@@ -558,7 +576,7 @@
             if (!rows().length) return toast("Savatingiz bo'sh");
             $('checkout-name').value = fullName();
             $('checkout-phone').value = cust.phone || '';
-            renderLocPick();
+            renderLocPick(); renderPayPick();
             $('checkout-total').textContent = fmt(totals().total);
             $('checkout-modal').classList.remove('hidden'); syncBack();
         }
@@ -568,18 +586,20 @@
             const name = $('checkout-name').value.trim(), phone = $('checkout-phone').value;
             if (!name || phone.replace(/\D/g, '').length < 12) return toast("Ism va telefon raqamni to'liq kiriting");
             if (!locId) return toast('Yetkazib berish nuqtasini tanlang');
+            if (!payName) return toast("To'lov turini tanlang");
             if (!tg || !tg.initData) return toast('Buyurtma berish uchun ilovani Telegram orqali oching');
             const btn = $('order-btn'); btn.disabled = true; btn.textContent = 'Yuborilmoqda...';
             try {
-                const j = await post('/api/order', { name, phone, location_id: locId, payment: $('checkout-pay').value, promo: promoCode,
+                const j = await post('/api/order', { name, phone, location_id: locId, payment: payName, promo: promoCode,
                     items: rs.map(x => ({ id: x.c.id, size: x.c.size, qty: x.c.qty })) });
-                cart = []; ls.set('mel_cart', cart); promo = 0; promoCode = ''; $('promo-input').value = ''; myData = null;
+                cart = []; ls.set('mel_cart', cart); promo = 0; promoCode = ''; promoSeller = null; $('promo-input').value = ''; myData = null;
                 updateBadges(); closeCheckout(); renderCart();
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 openSheet('Buyurtma qabul qilindi', `<div class="text-center space-y-3 py-4">
                     <div class="w-16 h-16 mx-auto rounded-full bg-green-50 text-green-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-check"></i></div>
                     <p class="font-serif font-bold text-lg">#MEL-${j.id}</p>
                     <p class="text-xs text-gray-600">Jami: <b>${fmt(j.amount)}</b><br>Operatorimiz tez orada siz bilan bog'lanadi. Tasdiq xabari bot orqali ham yuborildi.</p>
+                    ${payInstr() ? `<div class="bg-white border border-melissaPeach rounded-xl p-3 text-xs text-left whitespace-pre-line">${esc(payInstr())}</div>` : ''}
                     <button onclick="closeSheet();switchTab('home')" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl">Asosiy sahifaga qaytish</button></div>`);
             } catch (e) { toast(e.message); }
             btn.disabled = false; btn.textContent = 'Buyurtmani tasdiqlash';
@@ -673,6 +693,62 @@
             } catch (e) { toast(e.message); b.disabled = false; b.textContent = 'Saqlash'; }
         }
 
+        // ---------- Qo'llab-quvvatlash ----------
+        let supKind = 'Izoh';
+        const SUP_CLS = { 'Yangi': 'bg-amber-100 text-amber-700', "Ko'rildi": 'bg-blue-100 text-blue-700', 'Hal qilindi': 'bg-green-100 text-green-700' };
+        const clean = v => String(v || '').replace(/[^A-Za-z0-9_.]/g, '');
+        const contactRow = (tag, attrs, ic, color, title, sub) => `<${tag} ${attrs} class="w-full flex items-center gap-3 p-4 rounded-2xl border bg-white shadow-sm text-left ${attrs === 'disabled' ? 'opacity-50 border-melissaPeach/60' : 'border-melissaPeach/60 hover:border-melissaDark transition'}"><span class="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0" style="background:${color}"><i class="${ic}"></i></span><span class="flex-1 min-w-0"><b class="block text-sm">${title}</b><span class="text-[11px] text-gray-500">${sub}</span></span><i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i></${tag}>`;
+        function openExt(url, isTg) { if (tg) { (isTg && tg.openTelegramLink) ? tg.openTelegramLink(url) : tg.openLink(url); } else window.open(url, '_blank'); }
+        function openSupport() {
+            const c = support || {}, ph = String(c.phone || '').replace(/[^+\d]/g, ''), tgu = clean(String(c.telegram || '').replace(/^@/, '')), ig = clean(String(c.instagram || '').replace(/^@/, ''));
+            openSheet("Qo'llab-quvvatlash", `<div class="space-y-3">
+                ${contactRow('button', 'onclick="supOnline()"', 'fa-solid fa-comments', '#D4A373', 'Online', 'Izoh yoki shikoyat yozing')}
+                ${ph ? contactRow('a', `href="tel:${esc(ph)}"`, 'fa-solid fa-phone', '#16A34A', 'Telefon', esc(c.phone) + (c.work_hours ? ' · ' + esc(c.work_hours) : '')) : contactRow('button', 'disabled', 'fa-solid fa-phone', '#16A34A', 'Telefon', 'Tez orada')}
+                ${tgu ? contactRow('button', `onclick="openExt('https://t.me/${tgu}', 1)"`, 'fa-brands fa-telegram', '#2AABEE', 'Telegram', '@' + tgu) : contactRow('button', 'disabled', 'fa-brands fa-telegram', '#2AABEE', 'Telegram', 'Tez orada')}
+                ${ig ? contactRow('button', `onclick="openExt('https://instagram.com/${ig}')"`, 'fa-brands fa-instagram', '#E1306C', 'Instagram', '@' + ig) : contactRow('button', 'disabled', 'fa-brands fa-instagram', '#E1306C', 'Instagram', 'Tez orada')}
+                <button onclick="supList()" class="w-full text-melissaAccent text-xs font-semibold py-2">Mening murojaatlarim</button></div>`);
+        }
+        function supKinds() {
+            $('sup-kinds').innerHTML = ['Izoh', 'Shikoyat'].map(k => `<button onclick="supKind='${k}';supKinds()" class="flex-1 py-2.5 rounded-xl border font-semibold ${supKind === k ? (k === 'Shikoyat' ? 'bg-[#D1495B] text-white border-[#D1495B]' : 'bg-melissaDark text-white border-melissaDark') : 'bg-white border-melissaPeach'}">${k === 'Shikoyat' ? '⚠️ Shikoyat' : '💬 Izoh'}</button>`).join('');
+            $('sup-msg').placeholder = supKind === 'Shikoyat' ? 'Shikoyatingizni batafsil yozing...' : 'Izohingizni yozing...';
+        }
+        function supOnline() {
+            $('sheet-title').textContent = 'Online xabar';
+            $('sheet-body').innerHTML = `<div class="space-y-4 text-xs">
+                <button onclick="openSupport()" class="text-gray-500"><i class="fa-solid fa-arrow-left mr-1"></i>Orqaga</button>
+                <div id="sup-kinds" class="flex gap-2"></div>
+                <select id="sup-prod" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none"><option value="">Qaysi mahsulot haqida? (ixtiyoriy)</option>${products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
+                <textarea id="sup-msg" rows="5" maxlength="1000" class="w-full bg-white border border-melissaPeach px-3 py-2.5 rounded-xl focus:outline-none select-text"></textarea>
+                <button id="sup-btn" onclick="sendSupport()" class="w-full bg-melissaDark text-white font-semibold py-3.5 rounded-xl">Jo'natish</button>
+                <button onclick="supList()" class="w-full text-melissaAccent font-semibold py-2">Mening murojaatlarim</button></div>`;
+            supKinds();
+        }
+        async function sendSupport() {
+            const message = $('sup-msg').value.trim();
+            if (message.length < 5) return toast('Xabarni batafsilroq yozing');
+            const b = $('sup-btn'); b.disabled = true; b.textContent = 'Yuborilmoqda...';
+            try {
+                await post('/api/customer', { action: 'support_send', kind: supKind, message, product_id: $('sup-prod').value || null });
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                $('sheet-body').innerHTML = `<div class="text-center space-y-3 py-6"><div class="w-16 h-16 mx-auto rounded-full bg-green-50 text-green-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-check"></i></div>
+                    <p class="font-serif font-bold text-lg">Xabaringiz yuborildi</p><p class="text-xs text-gray-600">Rahmat! Jamoamiz tez orada ko'rib chiqadi. Javob bot orqali keladi.</p>
+                    <button onclick="supList()" class="w-full bg-melissaDark text-white text-xs font-semibold py-3.5 rounded-xl">Mening murojaatlarim</button></div>`;
+            } catch (e) { toast(e.message); b.disabled = false; b.textContent = "Jo'natish"; }
+        }
+        async function supList() {
+            $('sheet-title').textContent = 'Mening murojaatlarim';
+            $('sheet-body').innerHTML = '<p class="text-xs text-gray-400 text-center py-6">Yuklanmoqda...</p>';
+            try {
+                const l = await post('/api/customer', { action: 'support_list' });
+                $('sheet-body').innerHTML = `<button onclick="openSupport()" class="text-xs text-gray-500 mb-3"><i class="fa-solid fa-arrow-left mr-1"></i>Orqaga</button>` + (l.map(m => `<div class="bg-white p-3 rounded-2xl border border-melissaPeach/60 shadow-sm space-y-2 mb-3 text-xs">
+                    <div class="flex justify-between items-center gap-2"><b>${m.kind === 'Shikoyat' ? '⚠️ Shikoyat' : '💬 Izoh'}</b><span class="${SUP_CLS[m.status] || ''} px-2.5 py-1 rounded-full font-medium text-[10px]">${esc(m.status)}</span></div>
+                    ${m.product_name ? `<p class="text-[11px] text-gray-400">Mahsulot: ${esc(m.product_name)}</p>` : ''}
+                    <p class="text-gray-700 whitespace-pre-line">${esc(m.message)}</p>
+                    ${m.admin_reply ? `<div class="bg-melissaBg rounded-xl p-3"><p class="text-[10px] uppercase text-gray-400 mb-1">Javob</p><p class="whitespace-pre-line">${esc(m.admin_reply)}</p></div>` : ''}
+                    <p class="text-[10px] text-gray-400">${new Date(m.created_at).toLocaleDateString('en-GB')}</p></div>`).join('') || '<div class="text-center py-10 text-gray-400"><i class="fa-solid fa-inbox text-3xl mb-2 text-melissaAccent"></i><p class="text-sm">Hozircha murojaatlar yo\'q</p></div>');
+            } catch (e) { $('sheet-body').innerHTML = `<p class="text-xs text-gray-400 text-center py-6">${esc(e.message)}</p>`; }
+        }
+
         // ---------- Umumiy oyna va orqaga tugmasi ----------
         function openSheet(title, html) { $('sheet-title').textContent = title; $('sheet-body').innerHTML = html; $('sheet').classList.remove('hidden'); syncBack(); }
         function closeSheet() { $('sheet').classList.add('hidden'); syncBack(); }
@@ -694,7 +770,10 @@
             $('hdr-avatar').innerHTML = img; $('prof-avatar').innerHTML = img;
         }
         if (tg && tg.initData) post('/api/customer', {}).then(c => { if (c && (c.first_name || c.phone)) { cust = c; ls.set('mel_cust', c); } }).catch(() => {});
-        load();
+        load().then(() => {
+            const go = new URLSearchParams(location.search).get('go');
+            if (go === 'orders') { switchTab('profile'); openOrders(); } else if (go === 'support') { switchTab('profile'); openSupport(); }
+        });
     </script>
 </body>
 </html>
